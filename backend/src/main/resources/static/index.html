@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BomERP - Consola API Ventas POS (Zaggy Morales)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- TOPBAR HEADER -->
+  <header class="topbar">
+    <div class="topbar-brand">
+      <div class="brand-badge">PRODUCTO U1 - LP2 | ADS | BD2</div>
+      <h1>Consola API - Ventas y Tickets POS</h1>
+      <p class="subtitle">
+        Módulo Transaccional: <strong>Morales Auquipata Zaggy Leonardo</strong> &bull; ERP Agro Peruvian Foods
+      </p>
+    </div>
+    <div class="topbar-actions">
+      <div class="api-status" id="apiStatusBadge">
+        <span class="status-dot"></span>
+        <span id="statusText">Conectando...</span>
+      </div>
+      <a href="/swagger-ui.html" target="_blank" class="nav-btn swagger-btn" title="Abrir documentación Swagger OpenAPI">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        Swagger UI
+      </a>
+      <a href="/v3/api-docs" target="_blank" class="nav-btn outline-btn" title="Ver esquema JSON OpenAPI">
+        API Docs
+      </a>
+      <a href="/actuator/health" target="_blank" class="nav-btn outline-btn" title="Verificar estado Actuator Health">
+        Health
+      </a>
+    </div>
+  </header>
+
+  <!-- URL DE CONFIGURACIÓN API -->
+  <div class="config-bar">
+    <div class="config-inner">
+      <label for="apiUrl">Base URL de la API:</label>
+      <input type="text" id="apiUrl" value="http://localhost:8080/api/v1">
+      <button type="button" id="btnTestConn" class="secondary-btn">Probar Conexión</button>
+      <span class="info-tip">Backend ejecutándose en Spring Boot con Oracle / H2</span>
+    </div>
+  </div>
+
+  <!-- LAYOUT PRINCIPAL -->
+  <main class="layout">
+
+    <!-- PANEL 1: REGISTRAR VENTA (POST) -->
+    <section class="panel">
+      <div class="panel-header">
+        <h2>1. POST /api/v1/ventas</h2>
+        <span class="endpoint-badge badge-post">POST</span>
+      </div>
+      <p class="panel-desc">Registro atómico cabecera-detalle con validaciones ACID, cálculo de IGV (18%) y descuento de stock.</p>
+
+      <form id="ventaForm" novalidate>
+        <div class="form-row">
+          <div class="form-group flex-2">
+            <label for="cliente">Cliente / Razón Social <span class="req">*</span></label>
+            <input type="text" id="cliente" value="María Quispe" placeholder="Nombre del cliente" required>
+          </div>
+          <div class="form-group flex-1">
+            <label for="metodoPago">Método de Pago <span class="req">*</span></label>
+            <select id="metodoPago">
+              <option value="EFECTIVO">EFECTIVO</option>
+              <option value="YAPE">YAPE</option>
+              <option value="PLIN">PLIN</option>
+              <option value="TRANSFERENCIA">TRANSFERENCIA</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="cart-builder">
+          <div class="cart-builder-title">
+            <span>Añadir Producto al Detalle</span>
+            <button type="button" id="btnRefreshCatalog" class="mini-btn" title="Recargar catálogo">↻ Actualizar Catálogo</button>
+          </div>
+          <div class="form-row">
+            <div class="form-group flex-2">
+              <label for="productoSelect">Producto del Catálogo</label>
+              <select id="productoSelect">
+                <option value="">Cargando productos...</option>
+              </select>
+            </div>
+            <div class="form-group flex-1">
+              <label for="cantidad">Cantidad</label>
+              <input type="number" id="cantidad" min="1" value="2">
+            </div>
+            <div class="form-group btn-col">
+              <button type="button" id="btnAddItem" class="add-item-btn">+ Añadir Ítem</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- TABLA DE ITEMS EN LA VENTA ACTUAL -->
+        <div class="cart-table-wrap">
+          <table class="cart-table">
+            <thead>
+              <tr>
+                <th>Producto</th>
+                <th class="num">Precio</th>
+                <th class="num">Cant.</th>
+                <th class="num">Subtotal</th>
+                <th class="center">Quitar</th>
+              </tr>
+            </thead>
+            <tbody id="cartTableBody">
+              <!-- Renderizado dinámico -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- TOTALES CALCULADOS -->
+        <div class="totals-summary">
+          <div class="totals-row">
+            <span>Subtotal (Base Imponible):</span>
+            <strong id="lblSubtotal">S/ 0.00</strong>
+          </div>
+          <div class="totals-row">
+            <span>IGV (18%):</span>
+            <strong id="lblIgv">S/ 0.00</strong>
+          </div>
+          <div class="totals-row total-highlight">
+            <span>Total a Pagar:</span>
+            <strong id="lblTotal">S/ 0.00</strong>
+          </div>
+        </div>
+
+        <button type="submit" id="btnSubmitVenta" class="primary-submit-btn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+          Registrar Venta Cabecera-Detalle
+        </button>
+
+        <!-- BOTONES DE CASOS DE PRUEBA RÁPIDOS PARA LA SUSTENTACIÓN -->
+        <div class="rubric-tests">
+          <p class="rubric-title">Casos de Prueba Rápida (Rúbrica U1):</p>
+          <div class="test-buttons-grid">
+            <button type="button" class="test-btn test-success" id="testCaseSuccess" title="Venta válida de 2 unidades">
+              ✓ Caso Éxito (2 uds)
+            </button>
+            <button type="button" class="test-btn test-error" id="testCaseRollback" title="Simula stock insuficiente (999,999 uds) -> 409 CONFLICT con Rollback total">
+              ⚠ Caso Rollback 409 (Stock Excedido)
+            </button>
+            <button type="button" class="test-btn test-warn" id="testCaseZero" title="Cantidad 0 -> 400 Bad Request por validación Jakarta">
+              ✕ Cantidad 0 (400 Bad Request)
+            </button>
+            <button type="button" class="test-btn test-warn" id="testCaseEmpty" title="Venta sin detalles -> 400 Bad Request">
+              ✕ Venta Vacía (400 Bad Request)
+            </button>
+          </div>
+        </div>
+      </form>
+    </section>
+
+    <!-- PANEL 2: CONSULTAS Y REPORTES (GET) -->
+    <section class="panel">
+      <div class="panel-header">
+        <h2>2. GET /api/v1/ventas</h2>
+        <span class="endpoint-badge badge-get">GET</span>
+      </div>
+      <p class="panel-desc">Consultas con filtros avanzados, ordenamiento y reportes agregados JPQL.</p>
+
+      <div class="filters-container">
+        <div class="form-group">
+          <label for="filtroEstado">Filtrar por Estado:</label>
+          <select id="filtroEstado">
+            <option value="TODAS">TODAS LAS VENTAS</option>
+            <option value="REGISTRADA">REGISTRADA</option>
+            <option value="ANULADA">ANULADA</option>
+          </select>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label for="ordenarPor">Ordenar por:</label>
+            <select id="ordenarPor">
+              <option value="fecha">Fecha</option>
+              <option value="total">Total</option>
+              <option value="id">ID</option>
+              <option value="clienteNombre">Cliente</option>
+            </select>
+          </div>
+          <div class="form-group flex-1">
+            <label for="direccion">Dirección:</label>
+            <select id="direccion">
+              <option value="DESC">Descendente (DESC)</option>
+              <option value="ASC">Ascendente (ASC)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="action-buttons-grid">
+          <button id="getVentasBtn" type="button" class="action-btn primary-action">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            Consultar Ventas
+          </button>
+          <button id="getResumenBtn" type="button" class="action-btn summary-action">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            Reporte / Resumen
+          </button>
+          <button id="clearConsoleBtn" type="button" class="action-btn clear-action">
+            Limpiar Visor
+          </button>
+        </div>
+      </div>
+
+      <!-- TARJETAS DE AGREGACIONES (MÉTRICAS RESUMEN) -->
+      <div id="kpiContainer" class="kpi-container" style="display: none;">
+        <div class="kpi-card">
+          <span class="kpi-label">Total Transacciones</span>
+          <span class="kpi-value" id="kpiCount">0</span>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-label">Monto Acumulado</span>
+          <span class="kpi-value highlight" id="kpiTotal">S/ 0.00</span>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-label">Ticket Promedio</span>
+          <span class="kpi-value" id="kpiAvg">S/ 0.00</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- PANEL 3: VISOR DE RESPUESTA API (JSON HTTP) -->
+    <section class="panel wide">
+      <div class="panel-header">
+        <h2>Respuesta API</h2>
+        <div class="response-meta" id="responseMeta">
+          <span class="http-tag method-tag" id="resMethod">HTTP</span>
+          <span class="http-tag path-tag" id="resPath">/api/v1/ventas</span>
+          <span class="http-tag status-tag status-idle" id="resStatus">STATUS 200</span>
+          <span class="http-tag time-tag" id="resTime">0 ms</span>
+        </div>
+      </div>
+      <div class="code-box-wrapper">
+        <pre id="responseBox"><code class="json">{ "mensaje": "Esperando solicitud..." }</code></pre>
+      </div>
+    </section>
+
+    <!-- PANEL 4: VENTAS PERSISTIDAS (TABLA CABECERA-DETALLE) -->
+    <section class="panel wide">
+      <div class="panel-header">
+        <h2>Ventas persistidas en BD</h2>
+        <div class="table-info">
+          <span id="ventasCountBadge" class="count-badge">0 registros</span>
+          <button id="refreshTableBtn" type="button" class="mini-btn">↻ Refrescar</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>N° Ticket POS</th>
+              <th>Fecha y Hora</th>
+              <th>Cliente</th>
+              <th>Pago</th>
+              <th>Detalles (Producto &times; Cant.)</th>
+              <th class="num">Subtotal</th>
+              <th class="num">IGV (18%)</th>
+              <th class="num">Total</th>
+              <th>Estado</th>
+              <th class="center">Acción</th>
+            </tr>
+          </thead>
+          <tbody id="ventasBody">
+            <tr><td colspan="11" class="empty-state">No hay ventas registradas o presione "Consultar Ventas".</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- MODAL DE TICKET TÉRMICO POS (80mm ESC/POS) -->
+  <div id="ticketModal" class="modal-backdrop">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Vista Previa: Ticket POS Térmico</h3>
+        <button type="button" class="modal-close" id="btnCloseTicketModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="thermal-ticket" id="thermalTicketPrint">
+          <div class="ticket-center">
+            <h4 class="company-name">AGRO PERUVIAN FOODS S.A.C.</h4>
+            <p class="company-info">R.U.C. 20601234567</p>
+            <p class="company-info">Av. Universitaria Km 19.5 - Ñaña, Lima</p>
+            <p class="company-info">Telf: (01) 618-6300 &bull; contacto@agroperuvian.pe</p>
+            <p class="separator">--------------------------------</p>
+            <p class="ticket-doc-type">TICKET ELECTRÓNICO DE VENTA</p>
+            <p class="ticket-number" id="tktNumero">TKT-00000000-000</p>
+            <p class="separator">--------------------------------</p>
+          </div>
+          <div class="ticket-meta">
+            <p><strong>Fecha:</strong> <span id="tktFecha">--/--/---- --:--</span></p>
+            <p><strong>Cajero:</strong> Zaggy Morales Auquipata</p>
+            <p><strong>Cliente:</strong> <span id="tktCliente">Cliente General</span></p>
+            <p><strong>Medio de Pago:</strong> <span id="tktPago">EFECTIVO</span></p>
+            <p><strong>Estado:</strong> <span id="tktEstado">REGISTRADA</span></p>
+          </div>
+          <p class="separator">--------------------------------</p>
+          <div class="ticket-items">
+            <table class="ticket-table">
+              <thead>
+                <tr>
+                  <th>CANT. DESCRIPCIÓN</th>
+                  <th class="num">P.UNIT</th>
+                  <th class="num">TOTAL</th>
+                </tr>
+              </thead>
+              <tbody id="tktItemsBody">
+                <!-- Ítems dinámicos -->
+              </tbody>
+            </table>
+          </div>
+          <p class="separator">--------------------------------</p>
+          <div class="ticket-totals">
+            <div class="ticket-row"><span>OP. GRAVADA:</span><span id="tktSubtotal">S/ 0.00</span></div>
+            <div class="ticket-row"><span>I.G.V. (18%):</span><span id="tktIgv">S/ 0.00</span></div>
+            <div class="ticket-row grand-total"><span>TOTAL A PAGAR:</span><span id="tktTotal">S/ 0.00</span></div>
+          </div>
+          <p class="separator">--------------------------------</p>
+          <div class="ticket-center ticket-footer">
+            <p>Gracias por su preferencia</p>
+            <p>Productos Agroindustriales 100% Orgánicos</p>
+            <div class="qr-placeholder">
+              <div class="qr-box">[ CÓDIGO QR HASH SHA-256 ]</div>
+            </div>
+            <p class="small-text">Emisión autorizada para evaluación LP2 U1</p>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="secondary-btn" id="btnCancelTicketModal">Cerrar</button>
+        <button type="button" class="primary-btn" id="btnPrintTicket"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg> Imprimir Ticket</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="app-footer">
+    <p>Agro Peruvian Foods &bull; Proyecto Integrador BomERP &bull; UPeU 2026 &bull; Responsable Módulo Ventas: Zaggy Leonardo Morales Auquipata</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

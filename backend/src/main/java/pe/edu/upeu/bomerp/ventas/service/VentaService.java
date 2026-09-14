@@ -12,5 +12,6 @@ public interface VentaService {
     List<VentaResponse> buscar(EstadoVenta estado, LocalDateTime desde, LocalDateTime hasta, String ordenarPor, String direccion);
     VentaResponse obtener(Long id);
     VentaResponse crear(VentaRequest request);
+    VentaResponse anular(Long id);
     VentaReporte reporte(EstadoVenta estado, LocalDateTime desde, LocalDateTime hasta);
 }

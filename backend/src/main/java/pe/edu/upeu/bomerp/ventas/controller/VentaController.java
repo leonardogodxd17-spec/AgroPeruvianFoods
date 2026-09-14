@@ -48,6 +48,12 @@ public class VentaController {
         return ResponseEntity.status(HttpStatus.CREATED).body(ventaService.crear(request));
     }
 
+    @Operation(summary = "Anular una venta registrada y reponer inventario de productos atómicamente")
+    @PutMapping("/{id}/anular")
+    public ResponseEntity<VentaResponse> anular(@PathVariable Long id) {
+        return ResponseEntity.ok(ventaService.anular(id));
+    }
+
     @Operation(summary = "Generar reporte agregado de ventas (total recaudado, ticket promedio y resumen)")
     @GetMapping("/resumen")
     public ResponseEntity<VentaReporte> reporte(

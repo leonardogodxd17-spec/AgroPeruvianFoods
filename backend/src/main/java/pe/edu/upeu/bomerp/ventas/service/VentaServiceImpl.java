@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pe.edu.upeu.bomerp.catalogo.producto.dto.ProductoResponse;
 import pe.edu.upeu.bomerp.catalogo.producto.service.ProductoService;
+import pe.edu.upeu.bomerp.exception.BusinessConflictException;
 import pe.edu.upeu.bomerp.exception.ResourceNotFoundException;
 import pe.edu.upeu.bomerp.ventas.dto.*;
 import pe.edu.upeu.bomerp.ventas.entity.DetalleVenta;
@@ -97,6 +98,30 @@ public class VentaServiceImpl implements VentaService {
 
         Venta guardada = ventaRepository.save(venta);
         return toResponse(guardada);
+    }
+
+    @Override
+    @Transactional
+    public VentaResponse anular(Long id) {
+        Venta venta = ventaRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Venta no encontrada con ID: " + id));
+
+        if (venta.getEstado() == EstadoVenta.ANULADA) {
+            throw new BusinessConflictException("La venta con ID " + id + " ya se encuentra anulada.");
+        }
+
+        // Reposición atómica de inventario para cada producto del detalle
+        if (venta.getDetalles() != null) {
+            for (DetalleVenta detalle : venta.getDetalles()) {
+                if (detalle.getProductoId() != null && detalle.getCantidad() != null) {
+                    productoService.aumentarStock(detalle.getProductoId(), detalle.getCantidad());
+                }
+            }
+        }
+
+        venta.setEstado(EstadoVenta.ANULADA);
+        Venta anulada = ventaRepository.save(venta);
+        return toResponse(anulada);
     }
 
     @Override

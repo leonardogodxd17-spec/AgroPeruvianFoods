@@ -10,7 +10,7 @@ import java.util.Arrays;
 @Configuration
 public class CorsConfig implements WebMvcConfigurer {
 
-    @Value("${bomerp.cors.allowed-origins:http://localhost:4200,http://localhost:5173,http://localhost:3000}")
+    @Value("${bomerp.cors.allowed-origins:*}")
     private String allowedOrigins;
 
     @Override
@@ -20,8 +20,9 @@ public class CorsConfig implements WebMvcConfigurer {
                 .toArray(String[]::new);
 
         registry.addMapping("/api/**")
-                .allowedOrigins(origins)
+                .allowedOriginPatterns(origins)
                 .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
-                .allowedHeaders("*");
+                .allowedHeaders("*")
+                .allowCredentials(true);
     }
 }
