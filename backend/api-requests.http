@@ -1,0 +1,222 @@
+﻿### ==========================================================================
+### ERP AGRO PERUVIAN FOODS - COLECCIÓN DE PRUEBAS DE API REST
+### Tríada UPeU: ADS | BD2 | LP2 - Unidad 1
+### ==========================================================================
+@baseUrl = http://localhost:8080/api
+
+### --------------------------------------------------------------------------
+### 1. CATÁLOGO: CATEGORÍAS Y PRODUCTOS
+### --------------------------------------------------------------------------
+
+### 1.1 Listar todos los productos
+GET {{baseUrl}}/productos
+Accept: application/json
+
+### 1.2 Obtener producto por ID (Quinua Blanca Real)
+GET {{baseUrl}}/productos/1
+Accept: application/json
+
+### 1.3 Crear nuevo producto agroindustrial
+POST {{baseUrl}}/productos
+Content-Type: application/json
+
+{
+  "nombre": "Kiwicha Pop Orgánica 250g",
+  "precio": 9.50,
+  "stock": 350,
+  "categoriaId": 1
+}
+
+### --------------------------------------------------------------------------
+### 2. MÓDULO DE CAJA (Brandon Ccalla)
+### --------------------------------------------------------------------------
+
+### 2.1 Obtener sesión de caja actualmente activa
+GET {{baseUrl}}/caja/sesion-activa
+Accept: application/json
+
+### 2.2 Listar historial de sesiones de caja
+GET {{baseUrl}}/caja/sesiones
+Accept: application/json
+
+### 2.3 Abrir una nueva sesión de caja (si no hay una abierta)
+POST {{baseUrl}}/caja/apertura
+Content-Type: application/json
+
+{
+  "cajeroNombre": "Brandon Ccalla",
+  "montoApertura": 400.00
+}
+
+### 2.4 Registrar movimiento de INGRESO en caja chica
+POST {{baseUrl}}/caja/movimientos
+Content-Type: application/json
+
+{
+  "tipo": "INGRESO",
+  "monto": 120.00,
+  "concepto": "Cobro de factura por asesoría técnica agrícola",
+  "metodoPago": "EFECTIVO",
+  "referencia": "REC-010"
+}
+
+### 2.5 Registrar movimiento de EGRESO en caja chica
+POST {{baseUrl}}/caja/movimientos
+Content-Type: application/json
+
+{
+  "tipo": "EGRESO",
+  "monto": 35.00,
+  "concepto": "Compra de refrigerio para personal de packing",
+  "metodoPago": "EFECTIVO",
+  "referencia": "BOL-998"
+}
+
+### 2.6 Cerrar sesión de caja con arqueo
+POST {{baseUrl}}/caja/sesiones/1/cierre
+Content-Type: application/json
+
+{
+  "saldoReal": 725.00,
+  "observaciones": "Arqueo de caja turno tarde con faltante de S/ 5.00"
+}
+
+### --------------------------------------------------------------------------
+### 3. MÓDULO DE VENTAS (Zaggy Morales)
+### --------------------------------------------------------------------------
+
+### 3.1 Registrar Venta Cabecera-Detalle (descuenta inventario atómicamente)
+POST {{baseUrl}}/ventas
+Content-Type: application/json
+
+{
+  "clienteNombre": "Supermercados Peruanos S.A.",
+  "metodoPago": "TRANSFERENCIA",
+  "detalles": [
+    {
+      "productoId": 1,
+      "loteId": 1,
+      "cantidad": 20
+    },
+    {
+      "productoId": 3,
+      "loteId": null,
+      "cantidad": 15
+    }
+  ]
+}
+
+### 3.2 Obtener venta por ID
+GET {{baseUrl}}/ventas/1
+Accept: application/json
+
+### 3.3 Buscar ventas con filtros y ordenación
+GET {{baseUrl}}/ventas?estado=REGISTRADA&ordenarPor=fecha&direccion=DESC
+Accept: application/json
+
+### 3.4 Reporte empresarial agregado de ventas (Totales, IGV, Resumen JPQL)
+GET {{baseUrl}}/ventas/reportes?estado=REGISTRADA
+Accept: application/json
+
+### --------------------------------------------------------------------------
+### 4. MÓDULO DE PRODUCCIÓN (Isai Armuto)
+### --------------------------------------------------------------------------
+
+### 4.1 Listar órdenes de producción
+GET {{baseUrl}}/produccion/ordenes
+Accept: application/json
+
+### 4.2 Planificar nueva orden de producción con detalle de insumos
+POST {{baseUrl}}/produccion/ordenes
+Content-Type: application/json
+
+{
+  "productoId": 1,
+  "nombreProducto": "Quinua Blanca Real Orgánica 1kg",
+  "cantidadProgramada": 300,
+  "observaciones": "Lote especial para certificación orgánica USDA",
+  "insumos": [
+    {
+      "insumoId": 9,
+      "nombreInsumo": "Bolsa Bilaminada al Vacío 1kg",
+      "cantidadRequerida": 300.000,
+      "cantidadConsumida": 300.000,
+      "unidadMedida": "UNIDADES"
+    }
+  ]
+}
+
+### 4.3 Iniciar orden de producción (cambia estado a EN_PROCESO)
+POST {{baseUrl}}/produccion/ordenes/2/iniciar
+Accept: application/json
+
+### 4.4 Completar orden de producción (genera lote FEFO y suma stock en catálogo)
+POST {{baseUrl}}/produccion/ordenes/2/completar
+Content-Type: application/json
+
+{
+  "cantidadProducida": 295,
+  "fechaVencimiento": "2027-09-30"
+}
+
+### 4.5 Listar lotes disponibles por producto ordenados por vencimiento (FEFO)
+GET {{baseUrl}}/produccion/lotes/fefo/1
+Accept: application/json
+
+### --------------------------------------------------------------------------
+### 5. MÓDULO DE COMPRAS (Elisban Huaylla)
+### --------------------------------------------------------------------------
+
+### 5.1 Listar proveedores
+GET {{baseUrl}}/compras/proveedores
+Accept: application/json
+
+### 5.2 Registrar nuevo proveedor
+POST {{baseUrl}}/compras/proveedores
+Content-Type: application/json
+
+{
+  "ruc": "20609876543",
+  "razonSocial": "AgroQuímicos y Semillas del Sur S.A.C.",
+  "telefono": "959123888",
+  "email": "ventas@agrosur.pe",
+  "direccion": "Parque Industrial Mz. B Lote 4, Arequipa"
+}
+
+### 5.3 Registrar nueva compra Cabecera-Detalle a proveedor
+POST {{baseUrl}}/compras
+Content-Type: application/json
+
+{
+  "numeroComprobante": "F003-000124",
+  "proveedorId": 1,
+  "fechaEmision": "2026-09-13",
+  "detalles": [
+    {
+      "insumoId": 9,
+      "nombreInsumo": "Bolsa Bilaminada al Vacío 1kg",
+      "cantidad": 2000.000,
+      "precioUnitario": 0.75
+    }
+  ]
+}
+
+### 5.4 Amortizar pago de compra registrada
+POST {{baseUrl}}/compras/2/amortizar
+Content-Type: application/json
+
+{
+  "montoPago": 500.00
+}
+
+### --------------------------------------------------------------------------
+### 6. ACTUATOR Y DOCUMENTACIÓN SWAGGER
+### --------------------------------------------------------------------------
+
+### 6.1 Health Check
+GET http://localhost:8080/actuator/health
+Accept: application/json
+
+### 6.2 OpenAPI Docs (JSON)
+GET http://localhost:8080/v3/api-docs
+Accept: application/json

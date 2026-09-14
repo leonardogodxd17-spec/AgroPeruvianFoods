@@ -1,0 +1,133 @@
+package pe.edu.upeu.bomerp.produccion;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import pe.edu.upeu.bomerp.catalogo.producto.service.ProductoService;
+import pe.edu.upeu.bomerp.exception.BusinessConflictException;
+import pe.edu.upeu.bomerp.produccion.dto.CompletarOrdenRequest;
+import pe.edu.upeu.bomerp.produccion.dto.DetalleConsumoRequest;
+import pe.edu.upeu.bomerp.produccion.dto.OrdenProduccionRequest;
+import pe.edu.upeu.bomerp.produccion.dto.OrdenProduccionResponse;
+import pe.edu.upeu.bomerp.produccion.entity.EstadoOrdenProduccion;
+import pe.edu.upeu.bomerp.produccion.entity.LoteProducto;
+import pe.edu.upeu.bomerp.produccion.entity.OrdenProduccion;
+import pe.edu.upeu.bomerp.produccion.repository.LoteProductoRepository;
+import pe.edu.upeu.bomerp.produccion.repository.OrdenProduccionRepository;
+import pe.edu.upeu.bomerp.produccion.service.ProduccionServiceImpl;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
+class ProduccionServiceTest {
+
+    @Mock
+    private OrdenProduccionRepository ordenProduccionRepository;
+
+    @Mock
+    private LoteProductoRepository loteProductoRepository;
+
+    @Mock
+    private ProductoService productoService;
+
+    @InjectMocks
+    private ProduccionServiceImpl produccionService;
+
+    private OrdenProduccion ordenPlanificada;
+
+    @BeforeEach
+    void setUp() {
+        ordenPlanificada = OrdenProduccion.builder()
+                .id(1L)
+                .codigoOrden("OP-20260913-001")
+                .productoId(10L)
+                .nombreProducto("Quinua Blanca Real Orgánica 1kg")
+                .cantidadProgramada(500)
+                .fechaInicio(LocalDateTime.now())
+                .estado(EstadoOrdenProduccion.PLANIFICADA)
+                .insumosConsumidos(new ArrayList<>())
+                .build();
+    }
+
+    @Test
+    @DisplayName("Debe planificar una orden de producción con sus insumos")
+    void crearOrden_debeCrearEnEstadoPlanificada() {
+        DetalleConsumoRequest insumo = new DetalleConsumoRequest();
+        insumo.setInsumoId(9L);
+        insumo.setNombreInsumo("Bolsa Bilaminada 1kg");
+        insumo.setCantidadRequerida(new BigDecimal("500.000"));
+        insumo.setCantidadConsumida(new BigDecimal("500.000"));
+        insumo.setUnidadMedida("UNIDADES");
+
+        OrdenProduccionRequest req = new OrdenProduccionRequest();
+        req.setProductoId(10L);
+        req.setNombreProducto("Quinua Blanca Real Orgánica 1kg");
+        req.setCantidadProgramada(500);
+        req.setInsumos(List.of(insumo));
+
+        when(ordenProduccionRepository.save(any(OrdenProduccion.class))).thenAnswer(i -> {
+            OrdenProduccion o = i.getArgument(0);
+            o.setId(2L);
+            return o;
+        });
+
+        OrdenProduccionResponse resp = produccionService.crearOrden(req);
+
+        assertNotNull(resp);
+        assertEquals(2L, resp.getId());
+        assertEquals(EstadoOrdenProduccion.PLANIFICADA, resp.getEstado());
+        assertEquals(500, resp.getCantidadProgramada());
+        verify(ordenProduccionRepository, times(1)).save(any(OrdenProduccion.class));
+    }
+
+    @Test
+    @DisplayName("Debe iniciar una orden planificada cambiando su estado a EN_PROCESO")
+    void iniciarOrden_debeCambiarEstadoAEnProceso() {
+        when(ordenProduccionRepository.findById(1L)).thenReturn(Optional.of(ordenPlanificada));
+        when(ordenProduccionRepository.save(any(OrdenProduccion.class))).thenAnswer(i -> i.getArgument(0));
+
+        OrdenProduccionResponse resp = produccionService.iniciarOrden(1L);
+
+        assertNotNull(resp);
+        assertEquals(EstadoOrdenProduccion.EN_PROCESO, resp.getEstado());
+        verify(ordenProduccionRepository, times(1)).save(ordenPlanificada);
+    }
+
+    @Test
+    @DisplayName("Debe completar la orden, aumentar stock en catálogo y crear lote FEFO con vencimiento")
+    void completarOrden_debeActualizarStockYGenerarLoteFEFO() {
+        ordenPlanificada.setEstado(EstadoOrdenProduccion.EN_PROCESO);
+
+        CompletarOrdenRequest req = new CompletarOrdenRequest();
+        req.setCantidadProducida(480);
+        req.setFechaVencimiento(LocalDate.now().plusYears(1));
+
+        when(ordenProduccionRepository.findById(1L)).thenReturn(Optional.of(ordenPlanificada));
+        doNothing().when(productoService).aumentarStock(10L, 480);
+        when(loteProductoRepository.save(any(LoteProducto.class))).thenAnswer(i -> i.getArgument(0));
+        when(ordenProduccionRepository.save(any(OrdenProduccion.class))).thenAnswer(i -> i.getArgument(0));
+
+        OrdenProduccionResponse resp = produccionService.completarOrden(1L, req);
+
+        assertNotNull(resp);
+        assertEquals(EstadoOrdenProduccion.COMPLETADA, resp.getEstado());
+        assertEquals(480, resp.getCantidadProducida());
+
+        verify(productoService, times(1)).aumentarStock(10L, 480);
+        verify(loteProductoRepository, times(1)).save(any(LoteProducto.class));
+        verify(ordenProduccionRepository, times(1)).save(ordenPlanificada);
+    }
+}
