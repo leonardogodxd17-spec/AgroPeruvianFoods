@@ -1,0 +1,206 @@
+package pe.edu.upeu.bomerp.produccion.service;
+
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import pe.edu.upeu.bomerp.catalogo.producto.service.ProductoService;
+import pe.edu.upeu.bomerp.exception.BusinessConflictException;
+import pe.edu.upeu.bomerp.exception.ResourceNotFoundException;
+import pe.edu.upeu.bomerp.produccion.dto.*;
+import pe.edu.upeu.bomerp.produccion.entity.DetalleConsumoInsumo;
+import pe.edu.upeu.bomerp.produccion.entity.EstadoOrdenProduccion;
+import pe.edu.upeu.bomerp.produccion.entity.LoteProducto;
+import pe.edu.upeu.bomerp.produccion.entity.OrdenProduccion;
+import pe.edu.upeu.bomerp.produccion.repository.LoteProductoRepository;
+import pe.edu.upeu.bomerp.produccion.repository.OrdenProduccionRepository;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
+
+@Service
+@RequiredArgsConstructor
+public class ProduccionServiceImpl implements ProduccionService {
+
+    private final OrdenProduccionRepository ordenProduccionRepository;
+    private final LoteProductoRepository loteProductoRepository;
+    private final ProductoService productoService;
+
+    @Override
+    @Transactional
+    public OrdenProduccionResponse crearOrden(OrdenProduccionRequest request) {
+        String codigo = "OP-" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+
+        OrdenProduccion orden = OrdenProduccion.builder()
+                .codigoOrden(codigo)
+                .productoId(request.getProductoId())
+                .nombreProducto(request.getNombreProducto())
+                .cantidadProgramada(request.getCantidadProgramada())
+                .fechaInicio(LocalDateTime.now())
+                .estado(EstadoOrdenProduccion.PLANIFICADA)
+                .observaciones(request.getObservaciones())
+                .insumosConsumidos(new ArrayList<>())
+                .build();
+
+        for (DetalleConsumoRequest item : request.getInsumos()) {
+            DetalleConsumoInsumo detalle = DetalleConsumoInsumo.builder()
+                    .ordenProduccion(orden)
+                    .insumoId(item.getInsumoId())
+                    .nombreInsumo(item.getNombreInsumo())
+                    .cantidadRequerida(item.getCantidadRequerida())
+                    .cantidadConsumida(item.getCantidadConsumida())
+                    .unidadMedida(item.getUnidadMedida())
+                    .build();
+            orden.getInsumosConsumidos().add(detalle);
+        }
+
+        return toOrdenResponse(ordenProduccionRepository.save(orden));
+    }
+
+    @Override
+    @Transactional
+    public OrdenProduccionResponse iniciarOrden(Long id) {
+        OrdenProduccion orden = ordenProduccionRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Orden de producción no encontrada con ID: " + id));
+
+        if (orden.getEstado() != EstadoOrdenProduccion.PLANIFICADA) {
+            throw new BusinessConflictException("Solo se pueden iniciar órdenes en estado PLANIFICADA.");
+        }
+
+        orden.setEstado(EstadoOrdenProduccion.EN_PROCESO);
+        return toOrdenResponse(ordenProduccionRepository.save(orden));
+    }
+
+    @Override
+    @Transactional
+    public OrdenProduccionResponse completarOrden(Long id, CompletarOrdenRequest request) {
+        OrdenProduccion orden = ordenProduccionRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Orden de producción no encontrada con ID: " + id));
+
+        if (orden.getEstado() == EstadoOrdenProduccion.COMPLETADA) {
+            throw new BusinessConflictException("La orden de producción ya ha sido completada.");
+        }
+
+        orden.setEstado(EstadoOrdenProduccion.COMPLETADA);
+        orden.setCantidadProducida(request.getCantidadProducida());
+        orden.setFechaFin(LocalDateTime.now());
+
+        // Aumentar stock del producto en el catálogo
+        productoService.aumentarStock(orden.getProductoId(), request.getCantidadProducida());
+
+        // Generar lote terminado con fecha de vencimiento (Criterio FEFO)
+        String codigoLote = "LOT-" + LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"))
+                + "-" + (int) (Math.random() * 900 + 100);
+
+        LoteProducto lote = LoteProducto.builder()
+                .codigoLote(codigoLote)
+                .productoId(orden.getProductoId())
+                .nombreProducto(orden.getNombreProducto())
+                .stockDisponible(request.getCantidadProducida())
+                .fechaProduccion(LocalDate.now())
+                .fechaVencimiento(request.getFechaVencimiento())
+                .build();
+
+        loteProductoRepository.save(lote);
+
+        return toOrdenResponse(ordenProduccionRepository.save(orden));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public OrdenProduccionResponse obtener(Long id) {
+        OrdenProduccion orden = ordenProduccionRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Orden de producción no encontrada con ID: " + id));
+        return toOrdenResponse(orden);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<OrdenProduccionResponse> listarOrdenes() {
+        return ordenProduccionRepository.findAll().stream()
+                .map(this::toOrdenResponse)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<LoteProductoResponse> listarLotesPorProducto(Long productoId) {
+        return loteProductoRepository.findByProductoId(productoId).stream()
+                .map(this::toLoteResponse)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<LoteProductoResponse> listarLotesDisponiblesFEFO(Long productoId) {
+        return loteProductoRepository.findByProductoIdAndStockDisponibleGreaterThanOrderByFechaVencimientoAsc(productoId, 0).stream()
+                .map(this::toLoteResponse)
+                .toList();
+    }
+
+    @Override
+    @Transactional
+    public void descontarStockLoteFEFO(Long productoId, Integer cantidad) {
+        List<LoteProducto> lotesDisponibles = loteProductoRepository
+                .findByProductoIdAndStockDisponibleGreaterThanOrderByFechaVencimientoAsc(productoId, 0);
+
+        int restante = cantidad;
+        for (LoteProducto lote : lotesDisponibles) {
+            if (restante <= 0) break;
+
+            if (lote.getStockDisponible() <= restante) {
+                restante -= lote.getStockDisponible();
+                lote.setStockDisponible(0);
+            } else {
+                lote.setStockDisponible(lote.getStockDisponible() - restante);
+                restante = 0;
+            }
+            loteProductoRepository.save(lote);
+        }
+
+        if (restante > 0) {
+            throw new BusinessConflictException("No hay stock suficiente en los lotes vigentes para satisfacer la cantidad solicitada.");
+        }
+    }
+
+    private OrdenProduccionResponse toOrdenResponse(OrdenProduccion o) {
+        List<DetalleConsumoResponse> consumos = o.getInsumosConsumidos() != null
+                ? o.getInsumosConsumidos().stream().map(d -> DetalleConsumoResponse.builder()
+                .id(d.getId())
+                .insumoId(d.getInsumoId())
+                .nombreInsumo(d.getNombreInsumo())
+                .cantidadRequerida(d.getCantidadRequerida())
+                .cantidadConsumida(d.getCantidadConsumida())
+                .unidadMedida(d.getUnidadMedida())
+                .build()).toList()
+                : List.of();
+
+        return OrdenProduccionResponse.builder()
+                .id(o.getId())
+                .codigoOrden(o.getCodigoOrden())
+                .productoId(o.getProductoId())
+                .nombreProducto(o.getNombreProducto())
+                .cantidadProgramada(o.getCantidadProgramada())
+                .cantidadProducida(o.getCantidadProducida())
+                .fechaInicio(o.getFechaInicio())
+                .fechaFin(o.getFechaFin())
+                .estado(o.getEstado())
+                .observaciones(o.getObservaciones())
+                .insumosConsumidos(consumos)
+                .build();
+    }
+
+    private LoteProductoResponse toLoteResponse(LoteProducto l) {
+        return LoteProductoResponse.builder()
+                .id(l.getId())
+                .codigoLote(l.getCodigoLote())
+                .productoId(l.getProductoId())
+                .nombreProducto(l.getNombreProducto())
+                .stockDisponible(l.getStockDisponible())
+                .fechaProduccion(l.getFechaProduccion())
+                .fechaVencimiento(l.getFechaVencimiento())
+                .build();
+    }
+}
