@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>TRABAJO PRÁCTICO: BASE DE DATOS II - AGRO PERUVIAN FOODS S.A.C.</title>
+<style>
+  @page {
+    size: A4;
+    margin: 18mm 15mm 18mm 15mm;
+  }
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #1e293b;
+    background-color: #ffffff;
+    line-height: 1.5;
+    font-size: 10pt;
+    margin: 0;
+    padding: 0;
+  }
+  .header-institucional {
+    background: #0f2e59;
+    color: #ffffff;
+    text-align: center;
+    padding: 16px 10px;
+    margin-bottom: 20px;
+    border-radius: 4px;
+  }
+  .header-institucional h1 {
+    font-size: 13.5pt;
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    font-weight: 700;
+  }
+  .header-institucional h2 {
+    font-size: 10.5pt;
+    margin: 3px 0;
+    font-weight: 500;
+    color: #cbd5e1;
+  }
+  .header-institucional h3 {
+    font-size: 12.5pt;
+    margin: 8px 0 0 0;
+    color: #fde047;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+  .ficha-datos {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 22px;
+  }
+  .ficha-datos td {
+    border: 1px solid #cbd5e1;
+    padding: 7px 10px;
+    font-size: 9.5pt;
+  }
+  .ficha-datos td.etiqueta {
+    background-color: #f8fafc;
+    font-weight: 700;
+    width: 30%;
+    color: #0f2e59;
+  }
+  h2.seccion-titulo {
+    color: #0f2e59;
+    font-size: 12pt;
+    border-bottom: 2px solid #0f2e59;
+    padding-bottom: 4px;
+    margin-top: 24px;
+    margin-bottom: 10px;
+    page-break-after: avoid;
+  }
+  h3.subseccion-titulo {
+    color: #1e3a8a;
+    font-size: 10.5pt;
+    margin-top: 14px;
+    margin-bottom: 6px;
+    page-break-after: avoid;
+  }
+  p, li {
+    font-size: 9.5pt;
+    color: #334155;
+    text-align: justify;
+  }
+  ul, ol {
+    margin: 4px 0 10px 18px;
+    padding: 0;
+  }
+  li {
+    margin-bottom: 3px;
+  }
+  .placeholder-captura {
+    background-color: #f8fafc;
+    border: 2px dashed #94a3b8;
+    border-radius: 6px;
+    min-height: 180px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin: 12px 0 20px 0;
+    padding: 14px;
+    page-break-inside: avoid;
+    text-align: center;
+  }
+  .placeholder-captura .icono {
+    font-size: 24pt;
+    color: #64748b;
+    margin-bottom: 4px;
+  }
+  .placeholder-captura .texto-principal {
+    font-size: 10pt;
+    font-weight: 700;
+    color: #1e293b;
+  }
+  .placeholder-captura .texto-guia {
+    font-size: 8.5pt;
+    color: #64748b;
+    margin-top: 4px;
+  }
+  pre {
+    background-color: #0f172a;
+    color: #f8fafc;
+    padding: 9px 12px;
+    border-radius: 5px;
+    overflow-x: auto;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 8.5pt;
+    line-height: 1.4;
+    page-break-inside: avoid;
+    margin: 8px 0 14px 0;
+  }
+  code {
+    font-family: 'Consolas', 'Courier New', monospace;
+  }
+  .page-break {
+    page-break-before: always;
+  }
+</style>
+</head>
+<body>
+
+<!-- ENCABEZADO INSTITUCIONAL -->
+<div class="header-institucional">
+  <h1>UNIVERSIDAD PERUANA UNIÓN</h1>
+  <h2>FACULTAD DE INGENIERÍA Y ARQUITECTURA</h2>
+  <h2>E.P. Ingeniería de Sistemas</h2>
+  <h3>TRABAJO PRÁCTICO: BASE DE DATOS II</h3>
+</div>
+
+<!-- FICHA DE DATOS DEL PROYECTO -->
+<table class="ficha-datos">
+  <tr>
+    <td class="etiqueta">Apellidos y Nombres:</td>
+    <td><strong>Equipo ERP Agro Peruvian Foods S.A.C.</strong></td>
+  </tr>
+  <tr>
+    <td class="etiqueta">Curso:</td>
+    <td>Base de Datos 2</td>
+  </tr>
+  <tr>
+    <td class="etiqueta">Ciclo / Grupo:</td>
+    <td>Ciclo 4 &nbsp;|&nbsp; Grupo 2 (Tríada UPeU: ADS | BD2 | LP2)</td>
+  </tr>
+  <tr>
+    <td class="etiqueta">Proyecto / Esquema:</td>
+    <td><strong>ERP Agro Peruvian Foods S.A.C. (BOMERP_APP)</strong></td>
+  </tr>
+  <tr>
+    <td class="etiqueta">Plataforma SGBD / Herramienta:</td>
+    <td>Oracle Database 23c Free / Oracle SQL Developer</td>
+  </tr>
+  <tr>
+    <td class="etiqueta">Fecha:</td>
+    <td>18 de Septiembre de 2026</td>
+  </tr>
+</table>
+
+<!-- SECCIÓN 1: MODELO RELACIONAL -->
+<h2 class="seccion-titulo">1. Modelo Relacional del Proyecto</h2>
+<p>A continuación se presenta el diagrama del modelo relacional integral para el sistema <strong>ERP Agro Peruvian Foods S.A.C.</strong> implementado en Oracle Database, que interconecta el catálogo, compras, caja chica, órdenes de producción con trazabilidad FEFO y el módulo de ventas y facturación.</p>
+
+<div class="placeholder-captura" style="min-height: 250px;">
+  <div class="icono">📊</div>
+  <div class="texto-principal">[PEGAR AQUÍ CAPTURA DEL MODELO RELACIONAL COMPLETO DE SQL DEVELOPER / DATA MODELER]</div>
+  <div class="texto-guia">Tablas requeridas: CATEGORIAS, PRODUCTOS, LOTES_PRODUCTO, PROVEEDORES, COMPRAS, DETALLE_COMPRAS, SESIONES_CAJA, MOVIMIENTOS_CAJA, ORDENES_PRODUCCION, DETALLES_CONSUMO_INSUMO, VENTAS, DETALLE_VENTAS.</div>
+</div>
+
+<div class="page-break"></div>
+
+<!-- SECCIÓN 2: IMPLEMENTACIÓN DDL Y DATOS DE PRUEBA -->
+<h2 class="seccion-titulo">2. Implementación de la Base de Datos y Datos de Prueba</h2>
+<p>A continuación se adjunta el código SQL exacto ejecutado en Oracle SQL Developer para la creación de las tablas troncales con sus respectivas restricciones de integridad de dominio, claves primarias por identidad y claves foráneas en cascada.</p>
+
+<h3 class="subseccion-titulo">2.1 Código SQL de Implementación DDL (Tablas en Oracle SQL Developer)</h3>
+
+<pre><code>-- ============================================================================
+-- 1. TABLAS DE CATÁLOGO E INVENTARIO
+-- ============================================================================
+CREATE TABLE CATEGORIAS (
+    ID NUMBER GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    NOMBRE VARCHAR2(80 BYTE) NOT NULL CONSTRAINT UQ_CATEGORIA_NOMBRE UNIQUE,
+    DESCRIPCION VARCHAR2(200 BYTE)
+);
+
+CREATE TABLE PRODUCTOS (
+    ID NUMBER GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    NOMBRE VARCHAR2(120 BYTE) NOT NULL,
+    PRECIO NUMBER(10, 2) NOT NULL CONSTRAINT CK_PROD_PRECIO CHECK (PRECIO > 0),
+    STOCK NUMBER(10) DEFAULT 0 NOT NULL CONSTRAINT CK_PROD_STOCK CHECK (STOCK >= 0),
+    ID_CATEGORIA NUMBER,
+    CONSTRAINT FK_PROD_CATEGORIA FOREIGN KEY (ID_CATEGORIA) REFERENCES CATEGORIAS(ID)
+);
+
+CREATE INDEX IDX_PROD_CATEGORIA ON PRODUCTOS(ID_CATEGORIA);
+CREATE INDEX IDX_PROD_NOMBRE ON PRODUCTOS(NOMBRE);
+
+-- ============================================================================
+-- 2. TABLAS DE COMPRAS Y PROVEEDORES
+-- ============================================================================
+CREATE TABLE PROVEEDORES (
+    ID NUMBER GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    RUC VARCHAR2(11 BYTE) NOT NULL CONSTRAINT UQ_PROV_RUC UNIQUE,
+    RAZON_SOCIAL VARCHAR2(150 BYTE) NOT NULL,
+    TELEFONO VARCHAR2(20 BYTE),
+    EMAIL VARCHAR2(80 BYTE),
+    DIRECCION VARCHAR2(200 BYTE)
+);
+
+CREATE TABLE COMPRAS (
+    ID NUMBER GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    NUMERO_COMPROBANTE VARCHAR2(30 BYTE) NOT NULL,
+    ID_PROVEEDOR NUMBER NOT NULL,
+    FECHA_EMISION DATE DEFAULT SYSDATE NOT NULL,
+    ESTADO VARCHAR2(20 BYTE) DEFAULT 'REGISTRADA' NOT NULL 
+        CONSTRAINT CK_COMPRA_ESTADO CHECK (ESTADO IN ('REGISTRADA', 'PAGADA', 'ANULADA')),
+    SUBTOTAL NUMBER(12, 2) NOT NULL,
+    IGV NUMBER(12, 2) NOT NULL,
+    TOTAL NUMBER(12, 2) NOT NULL CONSTRAINT CK_COMPRA_TOTAL CHECK (TOTAL >= 0),
+    SALDO_PENDIENTE NUMBER(12, 2) DEFAULT 0 NOT NULL CONSTRAINT CK_COMPRA_SALDO CHECK (SALDO_PENDIENTE >= 0),
+    CONSTRAINT FK_COMPRA_PROV FOREIGN KEY (ID_PROVEEDOR) REFERENCES PROVEEDORES(ID)
+);
+
+CREATE TABLE DETALLE_COMPRAS (
+    ID NUMBER GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    ID_COMPRA NUMBER NOT NULL,
+    ID_INSUMO NUMBER NOT NULL,
+    NOMBRE_INSUMO VARCHAR2(120 BYTE) NOT NULL,
+    CANTIDAD NUMBER(12, 3) NOT NULL CONSTRAINT CK_DET_COMPRA_CANT CHECK (CANTIDAD > 0),
+    PRECIO_UNITARIO NUMBER(10, 2) NOT NULL CONSTRAINT CK_DET_COMPRA_PRECIO CHECK (PRECIO_UNITARIO > 0),
+    SUBTOTAL NUMBER(12, 2) NOT NULL,
+    CONSTRAINT FK_DET_COMPRA_CABECERA FOREIGN KEY (ID_COMPRA) REFERENCES COMPRAS(ID) ON DELETE CASCADE
+);
+
+-- ============================================================================
+-- 3. TABLAS DE CAJA CHICA Y MOVIMIENTOS
+-- ============================================================================
+CREATE TABLE SESIONES_CAJA (
+    ID NUMBER GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    CAJERO_NOMBRE VARCHAR2(100 BYTE) NOT NULL,
+    FECHA_APERTURA TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    FECHA_CIERRE TIMESTAMP,
+    MONTO_APERTURA NUMBER(12, 2) NOT NULL CONSTRAINT CK_CAJA_APERTURA CHECK (MONTO_APERTURA >= 0),
+    MONTO_CIERRE NUMBER(12, 2),
+    SALDO_TEORICO NUMBER(12, 2) NOT NULL,
+    SALDO_REAL NUMBER(12, 2),
+    DIFERENCIA NUMBER(12, 2),
+    ESTADO VARCHAR2(20 BYTE) DEFAULT 'ABIERTA' NOT NULL 
+        CONSTRAINT CK_CAJA_ESTADO CHECK (ESTADO IN ('ABIERTA', 'CERRADA')),
+    OBSERVACIONES VARCHAR2(300 BYTE)
+);
+
+CREATE TABLE MOVIMIENTOS_CAJA (
+    ID NUMBER GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    ID_SESION_CAJA NUMBER NOT NULL,
+    TIPO VARCHAR2(20 BYTE) NOT NULL CONSTRAINT CK_MOV_TIPO CHECK (TIPO IN ('INGRESO', 'EGRESO')),
+    MONTO NUMBER(12, 2) NOT NULL CONSTRAINT CK_MOV_MONTO CHECK (MONTO > 0),
+    CONCEPTO VARCHAR2(200 BYTE) NOT NULL,
+    METODO_PAGO VARCHAR2(30 BYTE) NOT NULL 
+        CONSTRAINT CK_MOV_PAGO CHECK (METODO_PAGO IN ('EFECTIVO', 'YAPE', 'PLIN', 'TRANSFERENCIA')),
+    REFERENCIA VARCHAR2(100 BYTE),
+    FECHA TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    CONSTRAINT FK_MOV_SESION_CAJA FOREIGN KEY (ID_SESION_CAJA) REFERENCES SESIONES_CAJA(ID)
+);
+
+-- ============================================================================
+-- 4. TABLAS DE PRODUCCIÓN Y LOTES FEFO
+-- ============================================================================
+CREATE TABLE ORDENES_PRODUCCION (
+    ID NUMBER GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    CODIGO_ORDEN VARCHAR2(30 BYTE) NOT NULL CONSTRAINT UQ_OP_CODIGO UNIQUE,
+    ID_PRODUCTO NUMBER NOT NULL,
+    NOMBRE_PRODUCTO VARCHAR2(120 BYTE) NOT NULL,
+    CANTIDAD_PROGRAMADA NUMBER(10) NOT NULL CONSTRAINT CK_OP_CANT_PROG CHECK (CANTIDAD_PROGRAMADA > 0),
+    CANTIDAD_PRODUCIDA NUMBER(10),
+    FECHA_INICIO TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    FECHA_FIN TIMESTAMP,
+    ESTADO VARCHAR2(20 BYTE) DEFAULT 'PLANIFICADA' NOT NULL 
+        CONSTRAINT CK_OP_ESTADO CHECK (ESTADO IN ('PLANIFICADA', 'EN_PROCESO', 'COMPLETADA', 'CANCELADA')),
+    OBSERVACIONES VARCHAR2(300 BYTE),
+    CONSTRAINT FK_OP_PRODUCTO FOREIGN KEY (ID_PRODUCTO) REFERENCES PRODUCTOS(ID)
+);
+
+CREATE TABLE DETALLES_CONSUMO_INSUMO (
+    ID NUMBER GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    ID_ORDEN_PRODUCCION NUMBER NOT NULL,
+    ID_INSUMO NUMBER NOT NULL,
+    NOMBRE_INSUMO VARCHAR2(120 BYTE) NOT NULL,
+    CANTIDAD_REQUERIDA NUMBER(12, 3) NOT NULL CONSTRAINT CK_DET_REQ CHECK (CANTIDAD_REQUERIDA > 0),
+    CANTIDAD_CONSUMIDA NUMBER(12, 3) DEFAULT 0 NOT NULL,
+    UNIDAD_MEDIDA VARCHAR2(20 BYTE) NOT NULL,
+    CONSTRAINT FK_DET_OP FOREIGN KEY (ID_ORDEN_PRODUCCION) REFERENCES ORDENES_PRODUCCION(ID) ON DELETE CASCADE
+);
+
+CREATE TABLE LOTES_PRODUCTO (
+    ID NUMBER GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    CODIGO_LOTE VARCHAR2(30 BYTE) NOT NULL CONSTRAINT UQ_LOTE_CODIGO UNIQUE,
+    ID_PRODUCTO NUMBER NOT NULL,
+    NOMBRE_PRODUCTO VARCHAR2(120 BYTE) NOT NULL,
+    STOCK_DISPONIBLE NUMBER(10) NOT NULL CONSTRAINT CK_LOTE_STOCK CHECK (STOCK_DISPONIBLE >= 0),
+    FECHA_PRODUCCION DATE NOT NULL,
+    FECHA_VENCIMIENTO DATE NOT NULL,
+    CONSTRAINT FK_LOTE_PRODUCTO FOREIGN KEY (ID_PRODUCTO) REFERENCES PRODUCTOS(ID),
+    CONSTRAINT CK_LOTE_FECHAS CHECK (FECHA_VENCIMIENTO >= FECHA_PRODUCCION)
+);
+
+CREATE INDEX IDX_LOTE_FEFO ON LOTES_PRODUCTO(ID_PRODUCTO, FECHA_VENCIMIENTO ASC);
+
+-- ============================================================================
+-- 5. TABLAS DE VENTAS (CABECERA - DETALLE)
+-- ============================================================================
+CREATE TABLE VENTAS (
+    ID NUMBER GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    NUMERO_TICKET VARCHAR2(30 BYTE) NOT NULL CONSTRAINT UQ_VENTA_TICKET UNIQUE,
+    FECHA TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    ESTADO VARCHAR2(20 BYTE) DEFAULT 'REGISTRADA' NOT NULL 
+        CONSTRAINT CK_VENTA_ESTADO CHECK (ESTADO IN ('REGISTRADA', 'ANULADA')),
+    METODO_PAGO VARCHAR2(30 BYTE) NOT NULL 
+        CONSTRAINT CK_VENTA_PAGO CHECK (METODO_PAGO IN ('EFECTIVO', 'YAPE', 'PLIN', 'TRANSFERENCIA')),
+    SUBTOTAL NUMBER(12, 2) NOT NULL,
+    IGV NUMBER(12, 2) NOT NULL,
+    TOTAL NUMBER(12, 2) NOT NULL CONSTRAINT CK_VENTA_TOTAL CHECK (TOTAL >= 0),
+    CLIENTE_NOMBRE VARCHAR2(120 BYTE)
+);
+
+CREATE TABLE DETALLE_VENTAS (
+    ID NUMBER GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    ID_VENTA NUMBER NOT NULL,
+    ID_PRODUCTO NUMBER NOT NULL,
+    ID_LOTE NUMBER,
+    NOMBRE_PRODUCTO VARCHAR2(120 BYTE) NOT NULL,
+    PRECIO_UNITARIO NUMBER(10, 2) NOT NULL CONSTRAINT CK_DET_VNT_PRECIO CHECK (PRECIO_UNITARIO > 0),
+    CANTIDAD NUMBER(10) NOT NULL CONSTRAINT CK_DET_VNT_CANT CHECK (CANTIDAD > 0),
+    SUBTOTAL NUMBER(12, 2) NOT NULL,
+    CONSTRAINT FK_DET_VENTA FOREIGN KEY (ID_VENTA) REFERENCES VENTAS(ID) ON DELETE CASCADE,
+    CONSTRAINT FK_DET_VENTA_PROD FOREIGN KEY (ID_PRODUCTO) REFERENCES PRODUCTOS(ID),
+    CONSTRAINT FK_DET_VENTA_LOTE FOREIGN KEY (ID_LOTE) REFERENCES LOTES_PRODUCTO(ID)
+);
+</code></pre>
+
+<div class="placeholder-captura">
+  <div class="icono">🖥️</div>
+  <div class="texto-principal">[PEGAR AQUÍ CAPTURA DE COMPILACIÓN DDL EN SQL DEVELOPER]</div>
+  <div class="texto-guia">Captura mostrando la ejecución en el SQL Worksheet con las respuestas "Tabla creada" para todas las entidades.</div>
+</div>
+
+<div class="page-break"></div>
+
+<h3 class="subseccion-titulo">2.2 Código SQL de Poblado de Datos de Prueba (INSERT INTO)</h3>
+
+<pre><code>-- 1. CATEGORÍAS
+INSERT INTO CATEGORIAS (ID, NOMBRE, DESCRIPCION) VALUES (1, 'Granos Andinos', 'Granos nativos orgánicos: quinua, kiwicha, cañihua');
+INSERT INTO CATEGORIAS (ID, NOMBRE, DESCRIPCION) VALUES (2, 'Superfoods y Frutas', 'Frutas deshidratadas y frescas de exportación');
+INSERT INTO CATEGORIAS (ID, NOMBRE, DESCRIPCION) VALUES (3, 'Harinas y Polvos', 'Harinas nutritivas procesadas');
+INSERT INTO CATEGORIAS (ID, NOMBRE, DESCRIPCION) VALUES (4, 'Insumos y Envases', 'Materiales de empaque, bolsas bilaminadas y cajas');
+
+-- 2. PRODUCTOS
+INSERT INTO PRODUCTOS (ID, NOMBRE, PRECIO, STOCK, ID_CATEGORIA) VALUES (1, 'Quinua Blanca Real Orgánica 1kg', 14.50, 850, 1);
+INSERT INTO PRODUCTOS (ID, NOMBRE, PRECIO, STOCK, ID_CATEGORIA) VALUES (2, 'Quinua Roja Seleccionada 1kg', 16.00, 420, 1);
+INSERT INTO PRODUCTOS (ID, NOMBRE, PRECIO, STOCK, ID_CATEGORIA) VALUES (3, 'Kiwicha Perlada en Grano 1kg', 12.50, 300, 1);
+INSERT INTO PRODUCTOS (ID, NOMBRE, PRECIO, STOCK, ID_CATEGORIA) VALUES (5, 'Palta Hass Calibre 16 Exportación (kg)', 8.50, 1200, 2);
+INSERT INTO PRODUCTOS (ID, NOMBRE, PRECIO, STOCK, ID_CATEGORIA) VALUES (6, 'Arándano Fresco Biloxi Clamshell 125g', 6.20, 900, 2);
+INSERT INTO PRODUCTOS (ID, NOMBRE, PRECIO, STOCK, ID_CATEGORIA) VALUES (7, 'Cacao Nativo Chuncho en Grano 1kg', 24.00, 500, 2);
+INSERT INTO PRODUCTOS (ID, NOMBRE, PRECIO, STOCK, ID_CATEGORIA) VALUES (9, 'Harina de Lúcuma Pura 250g', 18.00, 310, 3);
+INSERT INTO PRODUCTOS (ID, NOMBRE, PRECIO, STOCK, ID_CATEGORIA) VALUES (10, 'Maca Negra Gelatinizada en Polvo 500g', 26.50, 180, 3);
+INSERT INTO PRODUCTOS (ID, NOMBRE, PRECIO, STOCK, ID_CATEGORIA) VALUES (11, 'Bolsa Bilaminada al Vacío 1kg', 0.80, 5000, 4);
+INSERT INTO PRODUCTOS (ID, NOMBRE, PRECIO, STOCK, ID_CATEGORIA) VALUES (12, 'Caja de Cartón Corrugado Export 10kg', 4.20, 2500, 4);
+
+-- 3. PROVEEDORES
+INSERT INTO PROVEEDORES (ID, RUC, RAZON_SOCIAL, TELEFONO, EMAIL, DIRECCION) VALUES (1, '20601234567', 'Cooperativa Agraria Productores de Ayacucho', '966123456', 'ventas@coopayacucho.pe', 'Av. Independencia 450, Huamanga, Ayacucho');
+INSERT INTO PROVEEDORES (ID, RUC, RAZON_SOCIAL, TELEFONO, EMAIL, DIRECCION) VALUES (2, '20558974123', 'Empaques y Cajas Industriales del Perú SAC', '014258963', 'contacto@empaquesperu.com', 'Av. Argentina 2850, Callao, Lima');
+
+-- 4. LOTES (CONTROL DE CADUCIDAD FEFO)
+INSERT INTO LOTES_PRODUCTO (ID, CODIGO_LOTE, ID_PRODUCTO, NOMBRE_PRODUCTO, STOCK_DISPONIBLE, FECHA_PRODUCCION, FECHA_VENCIMIENTO) 
+VALUES (1, 'LOT-QNB-2026-01', 1, 'Quinua Blanca Real Orgánica 1kg', 350, DATE '2026-07-10', DATE '2027-07-10');
+INSERT INTO LOTES_PRODUCTO (ID, CODIGO_LOTE, ID_PRODUCTO, NOMBRE_PRODUCTO, STOCK_DISPONIBLE, FECHA_PRODUCCION, FECHA_VENCIMIENTO) 
+VALUES (2, 'LOT-QNB-2026-02', 1, 'Quinua Blanca Real Orgánica 1kg', 500, DATE '2026-09-01', DATE '2027-09-01');
+INSERT INTO LOTES_PRODUCTO (ID, CODIGO_LOTE, ID_PRODUCTO, NOMBRE_PRODUCTO, STOCK_DISPONIBLE, FECHA_PRODUCCION, FECHA_VENCIMIENTO) 
+VALUES (3, 'LOT-ARA-2026-01', 6, 'Arándano Fresco Biloxi Clamshell 125g', 900, DATE '2026-09-10', DATE '2026-10-25');
+INSERT INTO LOTES_PRODUCTO (ID, CODIGO_LOTE, ID_PRODUCTO, NOMBRE_PRODUCTO, STOCK_DISPONIBLE, FECHA_PRODUCCION, FECHA_VENCIMIENTO) 
+VALUES (4, 'LOT-PLT-2026-01', 5, 'Palta Hass Calibre 16 Exportación (kg)', 1200, DATE '2026-09-12', DATE '2026-10-12');
+
+-- 5. CAJA CHICA Y TURNOS
+INSERT INTO SESIONES_CAJA (ID, CAJERO_NOMBRE, FECHA_APERTURA, MONTO_APERTURA, SALDO_TEORICO, ESTADO, OBSERVACIONES) 
+VALUES (1, 'Brandon Ccalla', TIMESTAMP '2026-09-15 08:00:00', 500.00, 730.00, 'ABIERTA', 'Sesión de caja activa turno mañana');
+
+INSERT INTO MOVIMIENTOS_CAJA (ID, ID_SESION_CAJA, TIPO, MONTO, CONCEPTO, METODO_PAGO, REFERENCIA, FECHA) 
+VALUES (1, 1, 'INGRESO', 250.00, 'Venta mostrador ticket TKT-001', 'EFECTIVO', 'TKT-20260913-001', TIMESTAMP '2026-09-15 08:30:00');
+INSERT INTO MOVIMIENTOS_CAJA (ID, ID_SESION_CAJA, TIPO, MONTO, CONCEPTO, METODO_PAGO, REFERENCIA, FECHA) 
+VALUES (2, 1, 'EGRESO', 20.00, 'Caja chica cinta de embalaje', 'EFECTIVO', 'REC-0045', TIMESTAMP '2026-09-15 09:15:00');
+
+-- 6. VENTAS FACTURADAS
+INSERT INTO VENTAS (ID, NUMERO_TICKET, FECHA, ESTADO, METODO_PAGO, SUBTOTAL, IGV, TOTAL, CLIENTE_NOMBRE) 
+VALUES (1, 'TKT-20260913-001', TIMESTAMP '2026-09-13 08:30:00', 'REGISTRADA', 'EFECTIVO', 211.86, 38.14, 250.00, 'Distribuidora BioAndes SAC');
+
+INSERT INTO DETALLE_VENTAS (ID, ID_VENTA, ID_PRODUCTO, ID_LOTE, NOMBRE_PRODUCTO, PRECIO_UNITARIO, CANTIDAD, SUBTOTAL) 
+VALUES (1, 1, 1, 1, 'Quinua Blanca Real Orgánica 1kg', 14.50, 10, 145.00);
+INSERT INTO DETALLE_VENTAS (ID, ID_VENTA, ID_PRODUCTO, ID_LOTE, NOMBRE_PRODUCTO, PRECIO_UNITARIO, CANTIDAD, SUBTOTAL) 
+VALUES (2, 1, 6, 3, 'Arándano Fresco Biloxi Clamshell 125g', 6.20, 17, 105.40);
+
+COMMIT;
+</code></pre>
+
+<div class="placeholder-captura">
+  <div class="icono">📸</div>
+  <div class="texto-principal">[PEGAR AQUÍ CAPTURA DE INSERCIÓN DML Y COMMIT EN SQL DEVELOPER]</div>
+  <div class="texto-guia">Captura mostrando las filas insertadas y el mensaje "Confirmación terminada (COMMIT)".</div>
+</div>
+
+<div class="page-break"></div>
+
+<!-- SECCIÓN 3: ALMACENAMIENTO DE TABLAS -->
+<h2 class="seccion-titulo">3. Almacenamiento de Tablas</h2>
+<p>Pruebas de verificación de los datos rellenados en el entorno de Oracle SQL Developer mediante sentencias <code>SELECT *</code>.</p>
+
+<h3 class="subseccion-titulo">3.1 Consulta de Catálogo: SELECT * FROM PRODUCTOS</h3>
+<div class="placeholder-captura">
+  <div class="icono">📋</div>
+  <div class="texto-principal">[PEGAR AQUÍ CAPTURA DE: SELECT * FROM PRODUCTOS;]</div>
+  <div class="texto-guia">Cuadrícula de datos con ID, NOMBRE, PRECIO, STOCK, ID_CATEGORIA.</div>
+</div>
+
+<h3 class="subseccion-titulo">3.2 Consulta de Lotes: SELECT * FROM LOTES_PRODUCTO</h3>
+<div class="placeholder-captura">
+  <div class="icono">📋</div>
+  <div class="texto-principal">[PEGAR AQUÍ CAPTURA DE: SELECT * FROM LOTES_PRODUCTO;]</div>
+  <div class="texto-guia">Cuadrícula mostrando CODIGO_LOTE, STOCK_DISPONIBLE, FECHA_PRODUCCION y FECHA_VENCIMIENTO.</div>
+</div>
+
+<div class="page-break"></div>
+
+<h3 class="subseccion-titulo">3.3 Consulta de Ventas: SELECT * FROM VENTAS</h3>
+<div class="placeholder-captura">
+  <div class="icono">📋</div>
+  <div class="texto-principal">[PEGAR AQUÍ CAPTURA DE: SELECT * FROM VENTAS;]</div>
+  <div class="texto-guia">Cuadrícula con NUMERO_TICKET, METODO_PAGO, SUBTOTAL, IGV, TOTAL, CLIENTE_NOMBRE.</div>
+</div>
+
+<h3 class="subseccion-titulo">3.4 Consulta de Detalle: SELECT * FROM DETALLE_VENTAS</h3>
+<div class="placeholder-captura">
+  <div class="icono">📋</div>
+  <div class="texto-principal">[PEGAR AQUÍ CAPTURA DE: SELECT * FROM DETALLE_VENTAS;]</div>
+  <div class="texto-guia">Cuadrícula con ID_VENTA, ID_PRODUCTO, ID_LOTE, CANTIDAD, SUBTOTAL.</div>
+</div>
+
+<div class="page-break"></div>
+
+<!-- SECCIÓN 4: PROCEDIMIENTOS ALMACENADOS (2 SP) -->
+<h2 class="seccion-titulo">4. Almacenamiento de Procedimientos (Stored Procedures - 2 SP)</h2>
+<p>Desarrolle e implemente 2 Stored Procedures requeridos para la lógica del sistema agroindustrial con control de concurrencia y validaciones de stock.</p>
+
+<h3 class="subseccion-titulo">4.1 Stored Procedure 01: Registrar Venta con Control de Stock Atómico (RN-VNT-01)</h3>
+<p><strong>Regla RN-VNT-01:</strong> Antes de registrar el ticket y detalle, se bloquea el registro del producto con <code>FOR UPDATE</code>. Si el stock en catálogo o lote no abastece la cantidad solicitada, lanza la excepción personalizada <code>-20010</code> evitando sobreventas.</p>
+
+<pre><code>CREATE OR REPLACE PROCEDURE SP_REGISTRAR_VENTA_ITEM (
+    p_cliente_nombre IN VARCHAR2,
+    p_metodo_pago    IN VARCHAR2,
+    p_id_producto    IN NUMBER,
+    p_id_lote        IN NUMBER DEFAULT NULL,
+    p_cantidad       IN NUMBER,
+    p_numero_ticket  OUT VARCHAR2,
+    p_total_cobrado  OUT NUMBER
+) AS
+    v_stock_actual   NUMBER(10);
+    v_precio_prod    NUMBER(10, 2);
+    v_nombre_prod    VARCHAR2(120);
+    v_subtotal_item  NUMBER(12, 2);
+    v_igv            NUMBER(12, 2);
+    v_base_neta      NUMBER(12, 2);
+    v_id_venta       NUMBER;
+BEGIN
+    -- Validar canal de cobro
+    IF UPPER(p_metodo_pago) NOT IN ('EFECTIVO', 'YAPE', 'PLIN', 'TRANSFERENCIA') THEN
+        RAISE_APPLICATION_ERROR(-20011, 'Método de pago no válido.');
+    END IF;
+
+    -- Bloqueo pesimista concurrente
+    SELECT STOCK, PRECIO, NOMBRE 
+    INTO v_stock_actual, v_precio_prod, v_nombre_prod
+    FROM PRODUCTOS 
+    WHERE ID = p_id_producto 
+    FOR UPDATE;
+
+    -- Validación RN-VNT-01
+    IF v_stock_actual < p_cantidad THEN
+        RAISE_APPLICATION_ERROR(-20010, 
+            'Regla RN-VNT-01: Stock insuficiente para ' || v_nombre_prod || 
+            '. Disponible: ' || v_stock_actual || ' unidades.');
+    END IF;
+
+    -- Cálculos comerciales
+    v_subtotal_item := v_precio_prod * p_cantidad;
+    v_igv := ROUND(v_subtotal_item * 0.18, 2);
+    v_base_neta := v_subtotal_item - v_igv;
+    p_numero_ticket := 'TKT-' || TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS');
+    p_total_cobrado := v_subtotal_item;
+
+    -- Inserción en cabecera
+    INSERT INTO VENTAS (NUMERO_TICKET, FECHA, ESTADO, METODO_PAGO, SUBTOTAL, IGV, TOTAL, CLIENTE_NOMBRE)
+    VALUES (p_numero_ticket, SYSDATE, 'REGISTRADA', UPPER(p_metodo_pago), v_base_neta, v_igv, v_subtotal_item, p_cliente_nombre)
+    RETURNING ID INTO v_id_venta;
+
+    -- Inserción en detalle
+    INSERT INTO DETALLE_VENTAS (ID_VENTA, ID_PRODUCTO, ID_LOTE, NOMBRE_PRODUCTO, PRECIO_UNITARIO, CANTIDAD, SUBTOTAL)
+    VALUES (v_id_venta, p_id_producto, p_id_lote, v_nombre_prod, v_precio_prod, p_cantidad, v_subtotal_item);
+
+    -- Actualización de inventario físico
+    UPDATE PRODUCTOS 
+    SET STOCK = STOCK - p_cantidad
+    WHERE ID = p_id_producto;
+
+    IF p_id_lote IS NOT NULL THEN
+        UPDATE LOTES_PRODUCTO
+        SET STOCK_DISPONIBLE = STOCK_DISPONIBLE - p_cantidad
+        WHERE ID = p_id_lote;
+    END IF;
+
+    COMMIT;
+EXCEPTION
+    WHEN OTHERS THEN
+        ROLLBACK;
+        RAISE;
+END;
+/
+</code></pre>
+
+<div class="placeholder-captura">
+  <div class="icono">⚙️</div>
+  <div class="texto-principal">[PEGAR AQUÍ CAPTURA DE COMPILACIÓN DEL SP 01 EN SQL DEVELOPER]</div>
+  <div class="texto-guia">Procedimiento SP_REGISTRAR_VENTA_ITEM compilado con éxito.</div>
+</div>
+
+<div class="page-break"></div>
+
+<h3 class="subseccion-titulo">Prueba de Ejecución del SP 01:</h3>
+<pre><code>-- Bloque anónimo de prueba: Registrar venta de 5 unidades de Quinua Blanca
+DECLARE
+    v_ticket VARCHAR2(30);
+    v_total  NUMBER;
+BEGIN
+    SP_REGISTRAR_VENTA_ITEM(
+        p_cliente_nombre => 'Cooperativa Sol del Valle',
+        p_metodo_pago    => 'EFECTIVO',
+        p_id_producto    => 1,
+        p_id_lote        => 1,
+        p_cantidad       => 5,
+        p_numero_ticket  => v_ticket,
+        p_total_cobrado  => v_total
+    );
+    DBMS_OUTPUT.PUT_LINE('Venta registrada exitosamente.');
+    DBMS_OUTPUT.PUT_LINE('Ticket: ' || v_ticket || ' | Total Cobrado: S/ ' || v_total);
+END;
+/
+</code></pre>
+
+<div class="placeholder-captura">
+  <div class="icono">🧪</div>
+  <div class="texto-principal">[PEGAR AQUÍ CAPTURA DE EJECUCIÓN Y PRUEBA DEL SP 01]</div>
+  <div class="texto-guia">Ventana de Salida DBMS mostrando el mensaje de venta exitosa y descuento de stock.</div>
+</div>
+
+<h3 class="subseccion-titulo">4.2 Stored Procedure 02: Anulación de Venta con Reposición Automática de Inventario</h3>
+<pre><code>CREATE OR REPLACE PROCEDURE SP_ANULAR_VENTA (
+    p_id_venta IN NUMBER
+) AS
+    v_estado_actual VARCHAR2(20);
+BEGIN
+    SELECT ESTADO 
+    INTO v_estado_actual
+    FROM VENTAS 
+    WHERE ID = p_id_venta 
+    FOR UPDATE;
+
+    IF v_estado_actual = 'ANULADA' THEN
+        RAISE_APPLICATION_ERROR(-20015, 'La venta ya se encuentra anulada previamente.');
+    END IF;
+
+    -- Devolución de existencias al almacén
+    FOR item IN (SELECT ID_PRODUCTO, ID_LOTE, CANTIDAD FROM DETALLE_VENTAS WHERE ID_VENTA = p_id_venta) LOOP
+        UPDATE PRODUCTOS 
+        SET STOCK = STOCK + item.CANTIDAD 
+        WHERE ID = item.ID_PRODUCTO;
+
+        IF item.ID_LOTE IS NOT NULL THEN
+            UPDATE LOTES_PRODUCTO 
+            SET STOCK_DISPONIBLE = STOCK_DISPONIBLE + item.CANTIDAD 
+            WHERE ID = item.ID_LOTE;
+        END IF;
+    END LOOP;
+
+    -- Asentar estado anulado
+    UPDATE VENTAS 
+    SET ESTADO = 'ANULADA' 
+    WHERE ID = p_id_venta;
+
+    COMMIT;
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        ROLLBACK;
+        RAISE_APPLICATION_ERROR(-20016, 'No existe la venta indicada.');
+    WHEN OTHERS THEN
+        ROLLBACK;
+        RAISE;
+END;
+/
+</code></pre>
+
+<div class="placeholder-captura">
+  <div class="icono">⚙️</div>
+  <div class="texto-principal">[PEGAR AQUÍ CAPTURA DE COMPILACIÓN Y PRUEBA DEL SP 02]</div>
+  <div class="texto-guia">Ejecución de EXEC SP_ANULAR_VENTA(1); y comprobación del estado ANULADA.</div>
+</div>
+
+<div class="page-break"></div>
+
+<!-- SECCIÓN 5: FUNCIONES DEFINIDAS POR EL USUARIO (2 FUNCIONES) -->
+<h2 class="seccion-titulo">5. Funciones Definidas por el Usuario (Functions - 2 Funciones)</h2>
+<p>Desarrolle e implemente 2 funciones personalizadas aplicadas al cálculo o reporte del sistema.</p>
+
+<h3 class="subseccion-titulo">5.1 Función 01: Determinar Lote Prioritario por Vencimiento (Criterio FEFO)</h3>
+<p>Retorna el <code>CODIGO_LOTE</code> que debe salir primero del almacén para garantizar que el producto no caduque en anaquel:</p>
+
+<pre><code>CREATE OR REPLACE FUNCTION FN_OBTENER_LOTE_FEFO (
+    p_id_producto IN NUMBER,
+    p_cantidad    IN NUMBER
+) RETURN VARCHAR2 AS
+    v_codigo_lote VARCHAR2(30);
+BEGIN
+    SELECT CODIGO_LOTE
+    INTO v_codigo_lote
+    FROM (
+        SELECT CODIGO_LOTE
+        FROM LOTES_PRODUCTO
+        WHERE ID_PRODUCTO = p_id_producto
+          AND STOCK_DISPONIBLE >= p_cantidad
+        ORDER BY FECHA_VENCIMIENTO ASC
+    )
+    WHERE ROWNUM = 1;
+
+    RETURN v_codigo_lote;
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        RETURN 'SIN_LOTE_DISPONIBLE';
+END;
+/
+</code></pre>
+
+<h3 class="subseccion-titulo">Prueba de la Función 01:</h3>
+<pre><code>SELECT 
+    p.NOMBRE AS PRODUCTO,
+    FN_OBTENER_LOTE_FEFO(p.ID, 10) AS LOTE_PRIORITARIO_FEFO
+FROM PRODUCTOS p
+WHERE p.ID IN (1, 6);
+</code></pre>
+
+<div class="placeholder-captura">
+  <div class="icono">🎯</div>
+  <div class="texto-principal">[PEGAR AQUÍ CAPTURA DE COMPILACIÓN Y PRUEBA DE LA FUNCIÓN 01]</div>
+  <div class="texto-guia">Resultado de la consulta mostrando el lote que vence más pronto (ej. LOT-ARA-2026-01).</div>
+</div>
+
+<div class="page-break"></div>
+
+<h3 class="subseccion-titulo">5.2 Función 02: Reporte de Total Recaudado por Método de Pago</h3>
+<p>Totaliza el volumen de facturación en soles acumulado para un determinado método de pago en ventas no anuladas:</p>
+
+<pre><code>CREATE OR REPLACE FUNCTION FN_TOTAL_VENTAS_METODO (
+    p_metodo_pago IN VARCHAR2
+) RETURN NUMBER AS
+    v_total NUMBER(12, 2) := 0;
+BEGIN
+    SELECT NVL(SUM(TOTAL), 0)
+    INTO v_total
+    FROM VENTAS
+    WHERE UPPER(METODO_PAGO) = UPPER(p_metodo_pago)
+      AND ESTADO = 'REGISTRADA';
+
+    RETURN v_total;
+END;
+/
+</code></pre>
+
+<h3 class="subseccion-titulo">Prueba de la Función 02:</h3>
+<pre><code>SELECT 
+    FN_TOTAL_VENTAS_METODO('EFECTIVO') AS RECAUDADO_EFECTIVO,
+    FN_TOTAL_VENTAS_METODO('YAPE') AS RECAUDADO_YAPE,
+    FN_TOTAL_VENTAS_METODO('TRANSFERENCIA') AS RECAUDADO_TRANSFERENCIA
+FROM DUAL;
+</code></pre>
+
+<div class="placeholder-captura">
+  <div class="icono">📊</div>
+  <div class="texto-principal">[PEGAR AQUÍ CAPTURA DE COMPILACIÓN Y PRUEBA DE LA FUNCIÓN 02]</div>
+  <div class="texto-guia">Cuadrícula con los importes totalizados por canal de cobranza.</div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Documentación Técnica de Base de Datos Oracle - Agro Peruvian Foods S.A.C.</title>
+<style>
+  @page {
+    size: A4;
+    margin: 18mm 15mm 18mm 15mm;
+  }
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #1e293b;
+    background-color: #ffffff;
+    line-height: 1.5;
+    font-size: 11pt;
+    margin: 0;
+    padding: 0;
+  }
+  .header-cover {
+    border-bottom: 3px solid #15803d;
+    padding-bottom: 12px;
+    margin-bottom: 24px;
+  }
+  h1 {
+    color: #166534;
+    font-size: 20pt;
+    margin: 0 0 6px 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .meta-info {
+    font-size: 10pt;
+    color: #475569;
+    margin-bottom: 8px;
+  }
+  .meta-info strong {
+    color: #0f172a;
+  }
+  h2 {
+    color: #15803d;
+    font-size: 14pt;
+    border-bottom: 1.5px solid #e2e8f0;
+    padding-bottom: 4px;
+    margin-top: 24px;
+    margin-bottom: 12px;
+    page-break-after: avoid;
+  }
+  h3 {
+    color: #0f766e;
+    font-size: 12pt;
+    margin-top: 18px;
+    margin-bottom: 8px;
+    page-break-after: avoid;
+  }
+  h4 {
+    color: #0369a1;
+    font-size: 11pt;
+    margin-top: 14px;
+    margin-bottom: 6px;
+    page-break-after: avoid;
+  }
+  p, li {
+    font-size: 10pt;
+    color: #334155;
+  }
+  ul, ol {
+    margin: 6px 0 12px 20px;
+    padding: 0;
+  }
+  li {
+    margin-bottom: 4px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 10px 0 16px 0;
+    font-size: 9pt;
+    page-break-inside: avoid;
+  }
+  th, td {
+    border: 1px solid #cbd5e1;
+    padding: 6px 8px;
+    text-align: left;
+  }
+  th {
+    background-color: #f1f5f9;
+    color: #0f172a;
+    font-weight: 600;
+  }
+  tr:nth-child(even) td {
+    background-color: #f8fafc;
+  }
+  code {
+    font-family: 'Consolas', 'Courier New', monospace;
+    background-color: #f1f5f9;
+    color: #b91c1c;
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-size: 8.8pt;
+  }
+  pre {
+    background-color: #0f172a;
+    color: #f8fafc;
+    padding: 10px 12px;
+    border-radius: 6px;
+    overflow-x: auto;
+    font-size: 8.5pt;
+    line-height: 1.4;
+    page-break-inside: avoid;
+    margin: 8px 0 14px 0;
+  }
+  pre code {
+    background: transparent;
+    color: inherit;
+    padding: 0;
+  }
+  .mer-box {
+    background-color: #f8fafc;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 12px;
+    margin: 12px 0;
+    page-break-inside: avoid;
+  }
+  .page-break {
+    page-break-before: always;
+  }
+  .badge {
+    display: inline-block;
+    padding: 2px 6px;
+    font-size: 7.5pt;
+    font-weight: 600;
+    border-radius: 4px;
+  }
+  .badge-pk { background-color: #fee2e2; color: #991b1b; }
+  .badge-fk { background-color: #e0f2fe; color: #075985; }
+</style>
+</head>
+<body>
+
+<div class="header-cover">
+  <h1>Documentación Técnica de Base de Datos Oracle</h1>
+  <div class="meta-info"><strong>Sistema:</strong> ERP Agro Peruvian Foods S.A.C.</div>
+  <div class="meta-info"><strong>Motor SGBD:</strong> Oracle Database 23c Free / 21c / 19c</div>
+  <div class="meta-info"><strong>Herramienta:</strong> Oracle SQL Developer</div>
+  <div class="meta-info"><strong>Fecha de Emisión:</strong> Septiembre 2026</div>
+</div>
+
+<h2>1. INTRODUCCIÓN Y ALCANCE</h2>
+<p>El presente documento detalla la estructura relacional, diccionario de datos, restricciones de integridad y scripts de operación de la base de datos para el sistema <strong>ERP Agro Peruvian Foods S.A.C.</strong></p>
+<p>El modelo soporta los cinco procesos troncales de la empresa agroindustrial:</p>
+<ol>
+  <li><strong>Catálogo e Inventario:</strong> Control de líneas de productos y stock consolidado.</li>
+  <li><strong>Compras y Proveedores:</strong> Abastecimiento de insumos agrícolas y empaques con RUC y control de saldos.</li>
+  <li><strong>Caja Chica y Arqueos:</strong> Apertura de turno, control de ingresos/egresos y cuadre de diferencias.</li>
+  <li><strong>Producción y Lotes (FEFO):</strong> Elaboración, mermas y despacho prioritario por caducidad (<em>First Expired, First Out</em>).</li>
+  <li><strong>Ventas y Despacho:</strong> Emisión de tickets y deducción automatizada del lote que expira primero.</li>
+</ol>
+
+<h2>2. MODELO ENTIDAD - RELACIÓN (RELACIONES PRINCIPALES)</h2>
+<div class="mer-box">
+  <ul>
+    <li><code>CATEGORIAS</code> <strong>(1:N)</strong> <code>PRODUCTOS</code></li>
+    <li><code>PRODUCTOS</code> <strong>(1:N)</strong> <code>LOTES_PRODUCTO</code> (control de caducidad)</li>
+    <li><code>PRODUCTOS</code> <strong>(1:N)</strong> <code>ORDENES_PRODUCCION</code> (fabricación)</li>
+    <li><code>ORDENES_PRODUCCION</code> <strong>(1:N)</strong> <code>DETALLES_CONSUMO_INSUMO</code></li>
+    <li><code>PROVEEDORES</code> <strong>(1:N)</strong> <code>COMPRAS</code></li>
+    <li><code>COMPRAS</code> <strong>(1:N)</strong> <code>DETALLE_COMPRAS</code> (ON DELETE CASCADE)</li>
+    <li><code>SESIONES_CAJA</code> <strong>(1:N)</strong> <code>MOVIMIENTOS_CAJA</code></li>
+    <li><code>VENTAS</code> <strong>(1:N)</strong> <code>DETALLE_VENTAS</code> (ON DELETE CASCADE)</li>
+    <li><code>PRODUCTOS</code> <strong>(1:N)</strong> <code>DETALLE_VENTAS</code></li>
+    <li><code>LOTES_PRODUCTO</code> <strong>(1:N)</strong> <code>DETALLE_VENTAS</code> (asignación FEFO)</li>
+  </ul>
+</div>
+
+<div class="page-break"></div>
+
+<h2>3. DICCIONARIO DE DATOS DETALLADO</h2>
+
+<h3>3.1. Módulo: Catálogo e Inventario</h3>
+<h4>Tabla: <code>CATEGORIAS</code></h4>
+<table>
+  <thead>
+    <tr><th>Campo</th><th>Tipo</th><th>Nulo</th><th>Restricción</th><th>Descripción</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>ID</code></td><td>NUMBER</td><td>NO</td><td><span class="badge badge-pk">PK</span> (Identity)</td><td>Identificador correlativo de categoría.</td></tr>
+    <tr><td><code>NOMBRE</code></td><td>VARCHAR2(80)</td><td>NO</td><td>UNIQUE</td><td>Nombre de la categoría (ej. Granos Andinos).</td></tr>
+    <tr><td><code>DESCRIPCION</code></td><td>VARCHAR2(200)</td><td>SÍ</td><td>-</td><td>Alcance y tipos de productos asociados.</td></tr>
+  </tbody>
+</table>
+
+<h4>Tabla: <code>PRODUCTOS</code></h4>
+<table>
+  <thead>
+    <tr><th>Campo</th><th>Tipo</th><th>Nulo</th><th>Restricción</th><th>Descripción</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>ID</code></td><td>NUMBER</td><td>NO</td><td><span class="badge badge-pk">PK</span> (Identity)</td><td>Identificador secuencial del producto.</td></tr>
+    <tr><td><code>NOMBRE</code></td><td>VARCHAR2(120)</td><td>NO</td><td>-</td><td>Denominación comercial o técnica.</td></tr>
+    <tr><td><code>PRECIO</code></td><td>NUMBER(10,2)</td><td>NO</td><td>CHECK (&gt; 0)</td><td>Precio de venta en soles (PEN).</td></tr>
+    <tr><td><code>STOCK</code></td><td>NUMBER(10)</td><td>NO</td><td>DEFAULT 0, CHECK (&gt;= 0)</td><td>Saldo total disponible en almacén.</td></tr>
+    <tr><td><code>ID_CATEGORIA</code></td><td>NUMBER</td><td>SÍ</td><td><span class="badge badge-fk">FK</span> CATEGORIAS(ID)</td><td>Categoría de clasificación.</td></tr>
+  </tbody>
+</table>
+
+<h3>3.2. Módulo: Compras y Proveedores</h3>
+<h4>Tabla: <code>PROVEEDORES</code></h4>
+<table>
+  <thead>
+    <tr><th>Campo</th><th>Tipo</th><th>Nulo</th><th>Restricción</th><th>Descripción</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>ID</code></td><td>NUMBER</td><td>NO</td><td><span class="badge badge-pk">PK</span> (Identity)</td><td>Código interno de proveedor.</td></tr>
+    <tr><td><code>RUC</code></td><td>VARCHAR2(11)</td><td>NO</td><td>UNIQUE</td><td>RUC de 11 dígitos validado por SUNAT.</td></tr>
+    <tr><td><code>RAZON_SOCIAL</code></td><td>VARCHAR2(150)</td><td>NO</td><td>-</td><td>Razón social o nombre comercial.</td></tr>
+    <tr><td><code>TELEFONO</code></td><td>VARCHAR2(20)</td><td>SÍ</td><td>-</td><td>Teléfono de contacto.</td></tr>
+    <tr><td><code>EMAIL</code></td><td>VARCHAR2(80)</td><td>SÍ</td><td>-</td><td>Correo electrónico.</td></tr>
+    <tr><td><code>DIRECCION</code></td><td>VARCHAR2(200)</td><td>SÍ</td><td>-</td><td>Domicilio fiscal.</td></tr>
+  </tbody>
+</table>
+
+<h4>Tabla: <code>COMPRAS</code></h4>
+<table>
+  <thead>
+    <tr><th>Campo</th><th>Tipo</th><th>Nulo</th><th>Restricción</th><th>Descripción</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>ID</code></td><td>NUMBER</td><td>NO</td><td><span class="badge badge-pk">PK</span> (Identity)</td><td>Identificador de compra.</td></tr>
+    <tr><td><code>NUMERO_COMPROBANTE</code></td><td>VARCHAR2(30)</td><td>NO</td><td>-</td><td>Serie y número de factura/guía.</td></tr>
+    <tr><td><code>ID_PROVEEDOR</code></td><td>NUMBER</td><td>NO</td><td><span class="badge badge-fk">FK</span> PROVEEDORES(ID)</td><td>Proveedor emisor.</td></tr>
+    <tr><td><code>FECHA_EMISION</code></td><td>DATE</td><td>NO</td><td>DEFAULT SYSDATE</td><td>Fecha de emisión física.</td></tr>
+    <tr><td><code>ESTADO</code></td><td>VARCHAR2(20)</td><td>NO</td><td>CHECK ('REGISTRADA','PAGADA','ANULADA')</td><td>Estado administrativo.</td></tr>
+    <tr><td><code>SUBTOTAL</code></td><td>NUMBER(12,2)</td><td>NO</td><td>-</td><td>Base imponible.</td></tr>
+    <tr><td><code>IGV</code></td><td>NUMBER(12,2)</td><td>NO</td><td>-</td><td>18% impuesto fiscal SUNAT.</td></tr>
+    <tr><td><code>TOTAL</code></td><td>NUMBER(12,2)</td><td>NO</td><td>CHECK (&gt;= 0)</td><td>Monto total comprobante.</td></tr>
+    <tr><td><code>SALDO_PENDIENTE</code></td><td>NUMBER(12,2)</td><td>NO</td><td>CHECK (&gt;= 0)</td><td>Importe pendiente de amortización.</td></tr>
+  </tbody>
+</table>
+
+<h4>Tabla: <code>DETALLE_COMPRAS</code></h4>
+<table>
+  <thead>
+    <tr><th>Campo</th><th>Tipo</th><th>Nulo</th><th>Restricción</th><th>Descripción</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>ID</code></td><td>NUMBER</td><td>NO</td><td><span class="badge badge-pk">PK</span> (Identity)</td><td>Identificador del ítem.</td></tr>
+    <tr><td><code>ID_COMPRA</code></td><td>NUMBER</td><td>NO</td><td><span class="badge badge-fk">FK</span> COMPRAS(ID) CASCADE</td><td>Enlace a cabecera.</td></tr>
+    <tr><td><code>ID_INSUMO</code></td><td>NUMBER</td><td>NO</td><td>-</td><td>Código del insumo adquirido.</td></tr>
+    <tr><td><code>NOMBRE_INSUMO</code></td><td>VARCHAR2(120)</td><td>NO</td><td>-</td><td>Descripción del insumo.</td></tr>
+    <tr><td><code>CANTIDAD</code></td><td>NUMBER(12,3)</td><td>NO</td><td>CHECK (&gt; 0)</td><td>Cantidad comprada (soporta kg).</td></tr>
+    <tr><td><code>PRECIO_UNITARIO</code></td><td>NUMBER(10,2)</td><td>NO</td><td>CHECK (&gt; 0)</td><td>Costo unitario pactado.</td></tr>
+    <tr><td><code>SUBTOTAL</code></td><td>NUMBER(12,2)</td><td>NO</td><td>-</td><td>Total línea.</td></tr>
+  </tbody>
+</table>
+
+<div class="page-break"></div>
+
+<h3>3.3. Módulo: Caja Chica y Arqueos</h3>
+<h4>Tabla: <code>SESIONES_CAJA</code></h4>
+<table>
+  <thead>
+    <tr><th>Campo</th><th>Tipo</th><th>Nulo</th><th>Restricción</th><th>Descripción</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>ID</code></td><td>NUMBER</td><td>NO</td><td><span class="badge badge-pk">PK</span> (Identity)</td><td>ID de la sesión de turno.</td></tr>
+    <tr><td><code>CAJERO_NOMBRE</code></td><td>VARCHAR2(100)</td><td>NO</td><td>-</td><td>Nombre del responsable.</td></tr>
+    <tr><td><code>FECHA_APERTURA</code></td><td>TIMESTAMP</td><td>NO</td><td>DEFAULT CURRENT_TIMESTAMP</td><td>Momento de apertura.</td></tr>
+    <tr><td><code>FECHA_CIERRE</code></td><td>TIMESTAMP</td><td>SÍ</td><td>-</td><td>Momento del cierre.</td></tr>
+    <tr><td><code>MONTO_APERTURA</code></td><td>NUMBER(12,2)</td><td>NO</td><td>CHECK (&gt;= 0)</td><td>Fondo inicial en caja.</td></tr>
+    <tr><td><code>MONTO_CIERRE</code></td><td>NUMBER(12,2)</td><td>SÍ</td><td>-</td><td>Conteo físico final.</td></tr>
+    <tr><td><code>SALDO_TEORICO</code></td><td>NUMBER(12,2)</td><td>NO</td><td>-</td><td>Apertura + Ingresos - Egresos.</td></tr>
+    <tr><td><code>SALDO_REAL</code></td><td>NUMBER(12,2)</td><td>SÍ</td><td>-</td><td>Efectivo real verificado.</td></tr>
+    <tr><td><code>DIFERENCIA</code></td><td>NUMBER(12,2)</td><td>SÍ</td><td>-</td><td>Sobrante (+) o Faltante (-).</td></tr>
+    <tr><td><code>ESTADO</code></td><td>VARCHAR2(20)</td><td>NO</td><td>CHECK ('ABIERTA','CERRADA')</td><td>Estado operativo del turno.</td></tr>
+    <tr><td><code>OBSERVACIONES</code></td><td>VARCHAR2(300)</td><td>SÍ</td><td>-</td><td>Justificaciones de cierre.</td></tr>
+  </tbody>
+</table>
+
+<h4>Tabla: <code>MOVIMIENTOS_CAJA</code></h4>
+<table>
+  <thead>
+    <tr><th>Campo</th><th>Tipo</th><th>Nulo</th><th>Restricción</th><th>Descripción</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>ID</code></td><td>NUMBER</td><td>NO</td><td><span class="badge badge-pk">PK</span> (Identity)</td><td>ID de la transacción.</td></tr>
+    <tr><td><code>ID_SESION_CAJA</code></td><td>NUMBER</td><td>NO</td><td><span class="badge badge-fk">FK</span> SESIONES_CAJA(ID)</td><td>Sesión activa.</td></tr>
+    <tr><td><code>TIPO</code></td><td>VARCHAR2(20)</td><td>NO</td><td>CHECK ('INGRESO','EGRESO')</td><td>Flujo de caja.</td></tr>
+    <tr><td><code>MONTO</code></td><td>NUMBER(12,2)</td><td>NO</td><td>CHECK (&gt; 0)</td><td>Importe de la operación.</td></tr>
+    <tr><td><code>CONCEPTO</code></td><td>VARCHAR2(200)</td><td>NO</td><td>-</td><td>Glosa explicativa.</td></tr>
+    <tr><td><code>METODO_PAGO</code></td><td>VARCHAR2(30)</td><td>NO</td><td>CHECK IN ('EFECTIVO','YAPE','PLIN','TRANSFERENCIA')</td><td>Medio monetario.</td></tr>
+    <tr><td><code>REFERENCIA</code></td><td>VARCHAR2(100)</td><td>SÍ</td><td>-</td><td>N° de ticket o transferencia.</td></tr>
+    <tr><td><code>FECHA</code></td><td>TIMESTAMP</td><td>NO</td><td>DEFAULT CURRENT_TIMESTAMP</td><td>Momento del movimiento.</td></tr>
+  </tbody>
+</table>
+
+<h3>3.4. Módulo: Producción y Control FEFO</h3>
+<h4>Tabla: <code>ORDENES_PRODUCCION</code></h4>
+<table>
+  <thead>
+    <tr><th>Campo</th><th>Tipo</th><th>Nulo</th><th>Restricción</th><th>Descripción</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>ID</code></td><td>NUMBER</td><td>NO</td><td><span class="badge badge-pk">PK</span> (Identity)</td><td>ID de la orden.</td></tr>
+    <tr><td><code>CODIGO_ORDEN</code></td><td>VARCHAR2(30)</td><td>NO</td><td>UNIQUE</td><td>Código identificador (OP-...).</td></tr>
+    <tr><td><code>ID_PRODUCTO</code></td><td>NUMBER</td><td>NO</td><td><span class="badge badge-fk">FK</span> PRODUCTOS(ID)</td><td>Producto final elaborado.</td></tr>
+    <tr><td><code>NOMBRE_PRODUCTO</code></td><td>VARCHAR2(120)</td><td>NO</td><td>-</td><td>Nombre del producto fabricado.</td></tr>
+    <tr><td><code>CANTIDAD_PROGRAMADA</code></td><td>NUMBER(10)</td><td>NO</td><td>CHECK (&gt; 0)</td><td>Unidades proyectadas.</td></tr>
+    <tr><td><code>CANTIDAD_PRODUCIDA</code></td><td>NUMBER(10)</td><td>SÍ</td><td>-</td><td>Unidades reales aprobadas.</td></tr>
+    <tr><td><code>FECHA_INICIO</code></td><td>TIMESTAMP</td><td>NO</td><td>-</td><td>Inicio de fabricación.</td></tr>
+    <tr><td><code>FECHA_FIN</code></td><td>TIMESTAMP</td><td>SÍ</td><td>-</td><td>Término de fabricación.</td></tr>
+    <tr><td><code>ESTADO</code></td><td>VARCHAR2(20)</td><td>NO</td><td>CHECK IN ('PLANIFICADA','EN_PROCESO','COMPLETADA','CANCELADA')</td><td>Estado de orden.</td></tr>
+    <tr><td><code>OBSERVACIONES</code></td><td>VARCHAR2(300)</td><td>SÍ</td><td>-</td><td>Observaciones de planta.</td></tr>
+  </tbody>
+</table>
+
+<h4>Tabla: <code>LOTES_PRODUCTO</code> (Criterio FEFO)</h4>
+<table>
+  <thead>
+    <tr><th>Campo</th><th>Tipo</th><th>Nulo</th><th>Restricción</th><th>Descripción</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>ID</code></td><td>NUMBER</td><td>NO</td><td><span class="badge badge-pk">PK</span> (Identity)</td><td>ID de lote.</td></tr>
+    <tr><td><code>CODIGO_LOTE</code></td><td>VARCHAR2(30)</td><td>NO</td><td>UNIQUE</td><td>Código de trazabilidad sanitaria.</td></tr>
+    <tr><td><code>ID_PRODUCTO</code></td><td>NUMBER</td><td>NO</td><td><span class="badge badge-fk">FK</span> PRODUCTOS(ID)</td><td>Producto al que pertenece.</td></tr>
+    <tr><td><code>NOMBRE_PRODUCTO</code></td><td>VARCHAR2(120)</td><td>NO</td><td>-</td><td>Nombre del producto.</td></tr>
+    <tr><td><code>STOCK_DISPONIBLE</code></td><td>NUMBER(10)</td><td>NO</td><td>CHECK (&gt;= 0)</td><td>Stock remanente del lote.</td></tr>
+    <tr><td><code>FECHA_PRODUCCION</code></td><td>DATE</td><td>NO</td><td>-</td><td>Fecha de envasado.</td></tr>
+    <tr><td><code>FECHA_VENCIMIENTO</code></td><td>DATE</td><td>NO</td><td>CHECK (VENC &gt;= PROD)</td><td>Fecha de expiración para orden FEFO.</td></tr>
+  </tbody>
+</table>
+
+<div class="page-break"></div>
+
+<h3>3.5. Módulo: Ventas y Despacho</h3>
+<h4>Tabla: <code>VENTAS</code></h4>
+<table>
+  <thead>
+    <tr><th>Campo</th><th>Tipo</th><th>Nulo</th><th>Restricción</th><th>Descripción</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>ID</code></td><td>NUMBER</td><td>NO</td><td><span class="badge badge-pk">PK</span> (Identity)</td><td>ID único de venta.</td></tr>
+    <tr><td><code>NUMERO_TICKET</code></td><td>VARCHAR2(30)</td><td>NO</td><td>UNIQUE</td><td>Serie y correlativo (ej. TKT-001).</td></tr>
+    <tr><td><code>FECHA</code></td><td>TIMESTAMP</td><td>NO</td><td>DEFAULT CURRENT_TIMESTAMP</td><td>Momento de emisión.</td></tr>
+    <tr><td><code>ESTADO</code></td><td>VARCHAR2(20)</td><td>NO</td><td>CHECK ('REGISTRADA','ANULADA')</td><td>Estado fiscal.</td></tr>
+    <tr><td><code>METODO_PAGO</code></td><td>VARCHAR2(30)</td><td>NO</td><td>CHECK IN ('EFECTIVO','YAPE','PLIN','TRANSFERENCIA')</td><td>Forma de pago.</td></tr>
+    <tr><td><code>SUBTOTAL</code></td><td>NUMBER(12,2)</td><td>NO</td><td>-</td><td>Base gravada.</td></tr>
+    <tr><td><code>IGV</code></td><td>NUMBER(12,2)</td><td>NO</td><td>-</td><td>18% IGV.</td></tr>
+    <tr><td><code>TOTAL</code></td><td>NUMBER(12,2)</td><td>NO</td><td>CHECK (&gt;= 0)</td><td>Total pagado.</td></tr>
+    <tr><td><code>CLIENTE_NOMBRE</code></td><td>VARCHAR2(120)</td><td>SÍ</td><td>-</td><td>Cliente o razón social.</td></tr>
+  </tbody>
+</table>
+
+<h4>Tabla: <code>DETALLE_VENTAS</code></h4>
+<table>
+  <thead>
+    <tr><th>Campo</th><th>Tipo</th><th>Nulo</th><th>Restricción</th><th>Descripción</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>ID</code></td><td>NUMBER</td><td>NO</td><td><span class="badge badge-pk">PK</span> (Identity)</td><td>ID de la partida de venta.</td></tr>
+    <tr><td><code>ID_VENTA</code></td><td>NUMBER</td><td>NO</td><td><span class="badge badge-fk">FK</span> VENTAS(ID) CASCADE</td><td>Enlace a ticket.</td></tr>
+    <tr><td><code>ID_PRODUCTO</code></td><td>NUMBER</td><td>NO</td><td><span class="badge badge-fk">FK</span> PRODUCTOS(ID)</td><td>Producto vendido.</td></tr>
+    <tr><td><code>ID_LOTE</code></td><td>NUMBER</td><td>SÍ</td><td><span class="badge badge-fk">FK</span> LOTES_PRODUCTO(ID)</td><td>Lote asignado por FEFO.</td></tr>
+    <tr><td><code>NOMBRE_PRODUCTO</code></td><td>VARCHAR2(120)</td><td>NO</td><td>-</td><td>Nombre del producto facturado.</td></tr>
+    <tr><td><code>PRECIO_UNITARIO</code></td><td>NUMBER(10,2)</td><td>NO</td><td>CHECK (&gt; 0)</td><td>Precio aplicado.</td></tr>
+    <tr><td><code>CANTIDAD</code></td><td>NUMBER(10)</td><td>NO</td><td>CHECK (&gt; 0)</td><td>Unidades vendidas.</td></tr>
+    <tr><td><code>SUBTOTAL</code></td><td>NUMBER(12,2)</td><td>NO</td><td>-</td><td>Total línea.</td></tr>
+  </tbody>
+</table>
+
+<h2>4. CONSULTAS ANALÍTICAS PRINCIPALES</h2>
+
+<h3>4.1. Despacho FEFO (Lotes prioritarios de salida)</h3>
+<pre><code>SELECT 
+    p.ID AS COD_PROD,
+    p.NOMBRE AS PRODUCTO,
+    l.CODIGO_LOTE,
+    l.STOCK_DISPONIBLE,
+    l.FECHA_VENCIMIENTO,
+    TRUNC(l.FECHA_VENCIMIENTO - SYSDATE) AS DIAS_HASTA_VENCIMIENTO
+FROM PRODUCTOS p
+JOIN LOTES_PRODUCTO l ON p.ID = l.ID_PRODUCTO
+WHERE l.STOCK_DISPONIBLE &gt; 0
+ORDER BY p.ID, l.FECHA_VENCIMIENTO ASC;</code></pre>
+
+<h3>4.2. Arqueo y Control de Descuadre de Caja</h3>
+<pre><code>SELECT 
+    ID,
+    CAJERO_NOMBRE,
+    FECHA_APERTURA,
+    MONTO_APERTURA,
+    SALDO_TEORICO,
+    SALDO_REAL,
+    DIFERENCIA,
+    CASE 
+        WHEN DIFERENCIA = 0 THEN 'CUADRE EXACTO'
+        WHEN DIFERENCIA &gt; 0 THEN 'SOBRANTE'
+        WHEN DIFERENCIA &lt; 0 THEN 'FALTANTE'
+        ELSE 'EN CURSO'
+    END AS EVALUACION_ARQUEO
+FROM SESIONES_CAJA
+ORDER BY ID DESC;</code></pre>
+
+</body>
+</html>
