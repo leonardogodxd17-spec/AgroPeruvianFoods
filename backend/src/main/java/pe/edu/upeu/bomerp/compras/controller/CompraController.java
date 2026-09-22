@@ -4,15 +4,18 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import pe.edu.upeu.bomerp.compras.dto.*;
+import pe.edu.upeu.bomerp.compras.entity.EstadoCompra;
 import pe.edu.upeu.bomerp.compras.service.CompraService;
 
+import java.time.LocalDate;
 import java.util.List;
 
-@Tag(name = "Compras - Insumos y Proveedores", description = "Adquisición de materias primas, material de empaque y cuentas por pagar (Elisban Huaylla)")
+@Tag(name = "Compras - Insumos y Proveedores", description = "Adquisición de materias primas, insumos y cuentas por pagar (Elishan Huaylla)")
 @RestController
 @RequestMapping("/api/v1/compras")
 @RequiredArgsConstructor
@@ -42,6 +45,21 @@ public class CompraController {
     @PutMapping("/{id}/amortizar")
     public ResponseEntity<CompraResponse> amortizarPago(@PathVariable Long id, @Valid @RequestBody AmortizarPagoRequest request) {
         return ResponseEntity.ok(compraService.amortizarPago(id, request));
+    }
+
+    @Operation(summary = "Anular una compra y liquidar saldo pendiente")
+    @PostMapping("/{id}/anular")
+    public ResponseEntity<CompraResponse> anularCompra(@PathVariable Long id) {
+        return ResponseEntity.ok(compraService.anularCompra(id));
+    }
+
+    @Operation(summary = "Generar reporte agregado de compras y cuentas por pagar")
+    @GetMapping("/resumen")
+    public ResponseEntity<CompraReporte> reporte(
+            @RequestParam(required = false) EstadoCompra estado,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta) {
+        return ResponseEntity.ok(compraService.reporte(estado, desde, hasta));
     }
 
     @Operation(summary = "Consultar compra por ID con el detalle de insumos adquiridos")

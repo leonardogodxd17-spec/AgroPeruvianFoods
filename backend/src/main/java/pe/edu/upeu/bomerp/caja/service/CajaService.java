@@ -10,4 +10,5 @@ public interface CajaService {
     SesionCajaResponse cerrarCaja(Long sesionId, CierreCajaRequest request);
     SesionCajaResponse obtenerSesionActiva();
     List<SesionCajaResponse> listarHistorial();
+    CajaReporte reporteResumen();
 }

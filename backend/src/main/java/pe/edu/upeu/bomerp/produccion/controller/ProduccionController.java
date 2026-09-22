@@ -4,15 +4,18 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import pe.edu.upeu.bomerp.produccion.dto.*;
+import pe.edu.upeu.bomerp.produccion.entity.EstadoOrdenProduccion;
 import pe.edu.upeu.bomerp.produccion.service.ProduccionService;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
-@Tag(name = "Producción - Recetas BOM y Lotes", description = "Planificación de órdenes, consumo de insumos y generación de lotes FEFO (Isai Armuto)")
+@Tag(name = "Producción - Recetas BOM y Lotes", description = "Planificación de órdenes, consumo de insumos y generación de lotes FEFO (Isaí Armuto)")
 @RestController
 @RequestMapping("/api/v1/produccion")
 @RequiredArgsConstructor
@@ -36,6 +39,21 @@ public class ProduccionController {
     @PutMapping("/ordenes/{id}/completar")
     public ResponseEntity<OrdenProduccionResponse> completarOrden(@PathVariable Long id, @Valid @RequestBody CompletarOrdenRequest request) {
         return ResponseEntity.ok(produccionService.completarOrden(id, request));
+    }
+
+    @Operation(summary = "Cancelar orden de producción pendiente")
+    @PostMapping("/ordenes/{id}/cancelar")
+    public ResponseEntity<OrdenProduccionResponse> cancelarOrden(@PathVariable Long id) {
+        return ResponseEntity.ok(produccionService.cancelarOrden(id));
+    }
+
+    @Operation(summary = "Generar reporte agregado de eficiencia de producción")
+    @GetMapping("/resumen")
+    public ResponseEntity<ProduccionReporte> reporte(
+            @RequestParam(required = false) EstadoOrdenProduccion estado,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime desde,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime hasta) {
+        return ResponseEntity.ok(produccionService.reporte(estado, desde, hasta));
     }
 
     @Operation(summary = "Consultar orden de producción por ID con detalle de insumos consumidos")

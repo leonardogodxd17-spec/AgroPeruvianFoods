@@ -9,10 +9,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import pe.edu.upeu.bomerp.catalogo.producto.service.ProductoService;
 import pe.edu.upeu.bomerp.exception.BusinessConflictException;
-import pe.edu.upeu.bomerp.produccion.dto.CompletarOrdenRequest;
-import pe.edu.upeu.bomerp.produccion.dto.DetalleConsumoRequest;
-import pe.edu.upeu.bomerp.produccion.dto.OrdenProduccionRequest;
-import pe.edu.upeu.bomerp.produccion.dto.OrdenProduccionResponse;
+import pe.edu.upeu.bomerp.produccion.dto.*;
 import pe.edu.upeu.bomerp.produccion.entity.EstadoOrdenProduccion;
 import pe.edu.upeu.bomerp.produccion.entity.LoteProducto;
 import pe.edu.upeu.bomerp.produccion.entity.OrdenProduccion;
@@ -129,5 +126,33 @@ class ProduccionServiceTest {
         verify(productoService, times(1)).aumentarStock(10L, 480);
         verify(loteProductoRepository, times(1)).save(any(LoteProducto.class));
         verify(ordenProduccionRepository, times(1)).save(ordenPlanificada);
+    }
+
+    @Test
+    @DisplayName("Debe cancelar una orden de producción planificada")
+    void cancelarOrden_ordenPlanificada_debeCambiarEstadoACancelada() {
+        when(ordenProduccionRepository.findById(1L)).thenReturn(Optional.of(ordenPlanificada));
+        when(ordenProduccionRepository.save(any(OrdenProduccion.class))).thenAnswer(i -> i.getArgument(0));
+
+        OrdenProduccionResponse resp = produccionService.cancelarOrden(1L);
+
+        assertNotNull(resp);
+        assertEquals(EstadoOrdenProduccion.CANCELADA, resp.getEstado());
+        verify(ordenProduccionRepository, times(1)).save(ordenPlanificada);
+    }
+
+    @Test
+    @DisplayName("Debe generar reporte agregado de eficiencia de producción")
+    void reporte_debeCalcularMetricasYEficiencia() {
+        ordenPlanificada.setCantidadProducida(450);
+        when(ordenProduccionRepository.buscar(null, null, null)).thenReturn(List.of(ordenPlanificada));
+
+        ProduccionReporte rep = produccionService.reporte(null, null, null);
+
+        assertNotNull(rep);
+        assertEquals(1L, rep.getTotalOrdenes());
+        assertEquals(500L, rep.getTotalCantidadProgramada());
+        assertEquals(450L, rep.getTotalCantidadProducida());
+        assertEquals(90.0, rep.getPorcentajeEficiencia());
     }
 }

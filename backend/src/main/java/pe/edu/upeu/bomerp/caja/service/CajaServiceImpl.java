@@ -117,6 +117,52 @@ public class CajaServiceImpl implements CajaService {
                 .toList();
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public CajaReporte reporteResumen() {
+        List<SesionCaja> sesiones = sesionCajaRepository.findAll();
+
+        long totalSesiones = sesiones.size();
+        long abiertas = sesiones.stream().filter(s -> s.getEstado() == EstadoSesionCaja.ABIERTA).count();
+        long cerradas = sesiones.stream().filter(s -> s.getEstado() == EstadoSesionCaja.CERRADA).count();
+
+        BigDecimal totalIngresos = BigDecimal.ZERO;
+        BigDecimal totalEgresos = BigDecimal.ZERO;
+        BigDecimal saldoNeto = BigDecimal.ZERO;
+        BigDecimal diferenciasAcumuladas = BigDecimal.ZERO;
+
+        for (SesionCaja s : sesiones) {
+            if (s.getSaldoTeorico() != null) {
+                saldoNeto = saldoNeto.add(s.getSaldoTeorico());
+            }
+            if (s.getDiferencia() != null) {
+                diferenciasAcumuladas = diferenciasAcumuladas.add(s.getDiferencia());
+            }
+            if (s.getMovimientos() != null) {
+                for (MovimientoCaja m : s.getMovimientos()) {
+                    if (m.getTipo() == TipoMovimientoCaja.INGRESO) {
+                        totalIngresos = totalIngresos.add(m.getMonto());
+                    } else if (m.getTipo() == TipoMovimientoCaja.EGRESO) {
+                        totalEgresos = totalEgresos.add(m.getMonto());
+                    }
+                }
+            }
+        }
+
+        List<SesionCajaResponse> listaResponses = sesiones.stream().map(this::toSesionResponse).toList();
+
+        return CajaReporte.builder()
+                .totalSesiones(totalSesiones)
+                .sesionesAbiertas(abiertas)
+                .sesionesCerradas(cerradas)
+                .totalIngresos(totalIngresos)
+                .totalEgresos(totalEgresos)
+                .saldoNetoEfectivo(saldoNeto)
+                .diferenciasAcumuladas(diferenciasAcumuladas)
+                .sesiones(listaResponses)
+                .build();
+    }
+
     private SesionCajaResponse toSesionResponse(SesionCaja s) {
         List<MovimientoCajaResponse> movs = s.getMovimientos() != null
                 ? s.getMovimientos().stream().map(this::toMovimientoResponse).toList()

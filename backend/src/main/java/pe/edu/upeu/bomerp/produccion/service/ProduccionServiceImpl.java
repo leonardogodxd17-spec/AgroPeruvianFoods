@@ -83,6 +83,10 @@ public class ProduccionServiceImpl implements ProduccionService {
             throw new BusinessConflictException("La orden de producción ya ha sido completada.");
         }
 
+        if (orden.getEstado() == EstadoOrdenProduccion.CANCELADA) {
+            throw new BusinessConflictException("No se puede completar una orden cancelada.");
+        }
+
         orden.setEstado(EstadoOrdenProduccion.COMPLETADA);
         orden.setCantidadProducida(request.getCantidadProducida());
         orden.setFechaFin(LocalDateTime.now());
@@ -109,6 +113,25 @@ public class ProduccionServiceImpl implements ProduccionService {
     }
 
     @Override
+    @Transactional
+    public OrdenProduccionResponse cancelarOrden(Long id) {
+        OrdenProduccion orden = ordenProduccionRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Orden de producción no encontrada con ID: " + id));
+
+        if (orden.getEstado() == EstadoOrdenProduccion.COMPLETADA) {
+            throw new BusinessConflictException("No se puede cancelar una orden de producción que ya fue completada.");
+        }
+
+        if (orden.getEstado() == EstadoOrdenProduccion.CANCELADA) {
+            throw new BusinessConflictException("La orden de producción ya se encuentra cancelada.");
+        }
+
+        orden.setEstado(EstadoOrdenProduccion.CANCELADA);
+        orden.setFechaFin(LocalDateTime.now());
+        return toOrdenResponse(ordenProduccionRepository.save(orden));
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public OrdenProduccionResponse obtener(Long id) {
         OrdenProduccion orden = ordenProduccionRepository.findById(id)
@@ -122,6 +145,38 @@ public class ProduccionServiceImpl implements ProduccionService {
         return ordenProduccionRepository.findAll().stream()
                 .map(this::toOrdenResponse)
                 .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ProduccionReporte reporte(EstadoOrdenProduccion estado, LocalDateTime desde, LocalDateTime hasta) {
+        List<OrdenProduccion> ordenes = ordenProduccionRepository.buscar(estado, desde, hasta);
+
+        long totalOrdenes = ordenes.size();
+        long totalProgramada = 0;
+        long totalProducida = 0;
+
+        for (OrdenProduccion o : ordenes) {
+            if (o.getCantidadProgramada() != null) {
+                totalProgramada += o.getCantidadProgramada();
+            }
+            if (o.getCantidadProducida() != null) {
+                totalProducida += o.getCantidadProducida();
+            }
+        }
+
+        double eficiencia = totalProgramada > 0 ? (totalProducida * 100.0) / totalProgramada : 0.0;
+        eficiencia = Math.round(eficiencia * 100.0) / 100.0;
+
+        List<OrdenProduccionResponse> listaResponses = ordenes.stream().map(this::toOrdenResponse).toList();
+
+        return ProduccionReporte.builder()
+                .totalOrdenes(totalOrdenes)
+                .totalCantidadProgramada(totalProgramada)
+                .totalCantidadProducida(totalProducida)
+                .porcentajeEficiencia(eficiencia)
+                .ordenes(listaResponses)
+                .build();
     }
 
     @Override

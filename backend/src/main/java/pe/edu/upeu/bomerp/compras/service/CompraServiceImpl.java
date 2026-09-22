@@ -15,6 +15,7 @@ import pe.edu.upeu.bomerp.exception.ResourceNotFoundException;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -104,6 +105,10 @@ public class CompraServiceImpl implements CompraService {
             throw new BusinessConflictException("La compra ya se encuentra totalmente cancelada/pagada.");
         }
 
+        if (compra.getEstado() == EstadoCompra.ANULADA) {
+            throw new BusinessConflictException("No se puede amortizar una compra que ha sido anulada.");
+        }
+
         if (request.getMontoPago().compareTo(compra.getSaldoPendiente()) > 0) {
             throw new BusinessConflictException("El monto a pagar (" + request.getMontoPago()
                     + ") no puede ser superior al saldo pendiente (" + compra.getSaldoPendiente() + ").");
@@ -115,6 +120,22 @@ public class CompraServiceImpl implements CompraService {
         if (nuevoSaldo.compareTo(BigDecimal.ZERO) == 0) {
             compra.setEstado(EstadoCompra.PAGADA);
         }
+
+        return toCompraResponse(compraRepository.save(compra));
+    }
+
+    @Override
+    @Transactional
+    public CompraResponse anularCompra(Long id) {
+        Compra compra = compraRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Compra no encontrada con ID: " + id));
+
+        if (compra.getEstado() == EstadoCompra.ANULADA) {
+            throw new BusinessConflictException("La compra ya se encuentra anulada.");
+        }
+
+        compra.setEstado(EstadoCompra.ANULADA);
+        compra.setSaldoPendiente(BigDecimal.ZERO);
 
         return toCompraResponse(compraRepository.save(compra));
     }
@@ -133,6 +154,39 @@ public class CompraServiceImpl implements CompraService {
         return compraRepository.findAll().stream()
                 .map(this::toCompraResponse)
                 .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public CompraReporte reporte(EstadoCompra estado, LocalDate desde, LocalDate hasta) {
+        List<Compra> compras = compraRepository.buscar(estado, desde, hasta);
+
+        long totalCompras = compras.size();
+        BigDecimal montoTotalComprado = BigDecimal.ZERO;
+        BigDecimal saldoPendienteTotal = BigDecimal.ZERO;
+
+        for (Compra c : compras) {
+            if (c.getEstado() != EstadoCompra.ANULADA) {
+                montoTotalComprado = montoTotalComprado.add(c.getTotal());
+                saldoPendienteTotal = saldoPendienteTotal.add(c.getSaldoPendiente());
+            }
+        }
+
+        BigDecimal montoTotalPagado = montoTotalComprado.subtract(saldoPendienteTotal);
+        BigDecimal ticketPromedio = totalCompras > 0
+                ? montoTotalComprado.divide(BigDecimal.valueOf(totalCompras), 2, RoundingMode.HALF_UP)
+                : BigDecimal.ZERO;
+
+        List<CompraResponse> listaResponses = compras.stream().map(this::toCompraResponse).toList();
+
+        return CompraReporte.builder()
+                .totalCompras(totalCompras)
+                .montoTotalComprado(montoTotalComprado)
+                .montoTotalPagado(montoTotalPagado)
+                .saldoPendienteTotal(saldoPendienteTotal)
+                .ticketPromedioCompra(ticketPromedio)
+                .compras(listaResponses)
+                .build();
     }
 
     private ProveedorResponse toProveedorResponse(Proveedor p) {

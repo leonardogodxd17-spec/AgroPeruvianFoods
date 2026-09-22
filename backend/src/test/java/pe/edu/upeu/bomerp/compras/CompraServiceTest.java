@@ -7,12 +7,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import pe.edu.upeu.bomerp.compras.dto.AmortizarPagoRequest;
-import pe.edu.upeu.bomerp.compras.dto.CompraRequest;
-import pe.edu.upeu.bomerp.compras.dto.CompraResponse;
-import pe.edu.upeu.bomerp.compras.dto.DetalleCompraRequest;
-import pe.edu.upeu.bomerp.compras.dto.ProveedorRequest;
-import pe.edu.upeu.bomerp.compras.dto.ProveedorResponse;
+import pe.edu.upeu.bomerp.compras.dto.*;
 import pe.edu.upeu.bomerp.compras.entity.Compra;
 import pe.edu.upeu.bomerp.compras.entity.EstadoCompra;
 import pe.edu.upeu.bomerp.compras.entity.Proveedor;
@@ -128,5 +123,33 @@ class CompraServiceTest {
         assertEquals(new BigDecimal("0.00"), resp.getSaldoPendiente());
         assertEquals(EstadoCompra.PAGADA, resp.getEstado());
         verify(compraRepository, times(1)).save(compraRegistrada);
+    }
+
+    @Test
+    @DisplayName("Debe anular compra y liquidar saldo pendiente")
+    void anularCompra_debeCambiarEstadoAAnuladaYLiquidarSaldo() {
+        when(compraRepository.findById(10L)).thenReturn(Optional.of(compraRegistrada));
+        when(compraRepository.save(any(Compra.class))).thenAnswer(i -> i.getArgument(0));
+
+        CompraResponse resp = compraService.anularCompra(10L);
+
+        assertNotNull(resp);
+        assertEquals(EstadoCompra.ANULADA, resp.getEstado());
+        assertEquals(BigDecimal.ZERO, resp.getSaldoPendiente());
+        verify(compraRepository, times(1)).save(compraRegistrada);
+    }
+
+    @Test
+    @DisplayName("Debe generar reporte agregado de compras y cuentas por pagar")
+    void reporte_debeCalcularMetricasDeCompras() {
+        when(compraRepository.buscar(null, null, null)).thenReturn(List.of(compraRegistrada));
+
+        CompraReporte rep = compraService.reporte(null, null, null);
+
+        assertNotNull(rep);
+        assertEquals(1L, rep.getTotalCompras());
+        assertEquals(new BigDecimal("1000.00"), rep.getMontoTotalComprado());
+        assertEquals(new BigDecimal("1000.00"), rep.getSaldoPendienteTotal());
+        assertEquals(new BigDecimal("0.00"), rep.getMontoTotalPagado());
     }
 }

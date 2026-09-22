@@ -7,13 +7,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import pe.edu.upeu.bomerp.caja.dto.AperturaCajaRequest;
-import pe.edu.upeu.bomerp.caja.dto.CierreCajaRequest;
-import pe.edu.upeu.bomerp.caja.dto.MovimientoCajaRequest;
-import pe.edu.upeu.bomerp.caja.dto.MovimientoCajaResponse;
-import pe.edu.upeu.bomerp.caja.dto.SesionCajaResponse;
+import pe.edu.upeu.bomerp.caja.dto.*;
 import pe.edu.upeu.bomerp.caja.entity.EstadoSesionCaja;
 import pe.edu.upeu.bomerp.caja.entity.MetodoPagoCaja;
+import pe.edu.upeu.bomerp.caja.entity.MovimientoCaja;
 import pe.edu.upeu.bomerp.caja.entity.SesionCaja;
 import pe.edu.upeu.bomerp.caja.entity.TipoMovimientoCaja;
 import pe.edu.upeu.bomerp.caja.repository.MovimientoCajaRepository;
@@ -24,6 +21,7 @@ import pe.edu.upeu.bomerp.exception.BusinessConflictException;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -149,5 +147,42 @@ class CajaServiceTest {
         assertEquals(new BigDecimal("490.00"), resp.getSaldoReal());
         assertEquals(new BigDecimal("-10.00"), resp.getDiferencia());
         verify(sesionCajaRepository, times(1)).save(sesionAbierta);
+    }
+
+    @Test
+    @DisplayName("Debe consolidar ingresos, egresos y saldos en el reporte resumen de caja")
+    void reporteResumen_debeConsolidarIngresosEgresosYSaldos() {
+        MovimientoCaja m1 = MovimientoCaja.builder()
+                .id(1L)
+                .tipo(TipoMovimientoCaja.INGRESO)
+                .monto(new BigDecimal("100.00"))
+                .concepto("Cobro venta")
+                .metodoPago(MetodoPagoCaja.EFECTIVO)
+                .build();
+        MovimientoCaja m2 = MovimientoCaja.builder()
+                .id(2L)
+                .tipo(TipoMovimientoCaja.EGRESO)
+                .monto(new BigDecimal("30.00"))
+                .concepto("Compra insumo menor")
+                .metodoPago(MetodoPagoCaja.EFECTIVO)
+                .build();
+
+        sesionAbierta.getMovimientos().add(m1);
+        sesionAbierta.getMovimientos().add(m2);
+        sesionAbierta.setSaldoTeorico(new BigDecimal("570.00"));
+        sesionAbierta.setDiferencia(new BigDecimal("0.00"));
+
+        when(sesionCajaRepository.findAll()).thenReturn(List.of(sesionAbierta));
+
+        CajaReporte rep = cajaService.reporteResumen();
+
+        assertNotNull(rep);
+        assertEquals(1L, rep.getTotalSesiones());
+        assertEquals(1L, rep.getSesionesAbiertas());
+        assertEquals(0L, rep.getSesionesCerradas());
+        assertEquals(new BigDecimal("100.00"), rep.getTotalIngresos());
+        assertEquals(new BigDecimal("30.00"), rep.getTotalEgresos());
+        assertEquals(new BigDecimal("570.00"), rep.getSaldoNetoEfectivo());
+        assertEquals(new BigDecimal("0.00"), rep.getDiferenciasAcumuladas());
     }
 }

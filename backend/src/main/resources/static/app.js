@@ -552,3 +552,656 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 });
+
+
+// ========================================================
+// MULTI-MODULE CONTROLLER LOGIC (BOMERP)
+// ========================================================
+
+// 1. Tab Navigation
+document.addEventListener("DOMContentLoaded", () => {
+  const tabs = document.querySelectorAll(".mod-tab");
+  tabs.forEach(tab => {
+    tab.addEventListener("click", () => {
+      const targetId = tab.getAttribute("data-tab");
+      document.querySelectorAll(".mod-tab").forEach(t => t.classList.remove("active"));
+      document.querySelectorAll(".tab-pane").forEach(p => p.classList.remove("active"));
+      tab.classList.add("active");
+      const pane = document.getElementById(targetId);
+      if (pane) pane.classList.add("active");
+
+      // Auto-load data for target module
+      if (targetId === "tab-compras") {
+        cargarProveedores();
+        cargarCompras();
+        cargarResumenCompras();
+      } else if (targetId === "tab-produccion") {
+        cargarProductosProduccion();
+        cargarOrdenes();
+        cargarResumenProduccion();
+      } else if (targetId === "tab-caja") {
+        cargarEstadoCaja();
+        cargarHistorialCaja();
+        cargarResumenCaja();
+      }
+    });
+  });
+
+  initComprasHandlers();
+  initProduccionHandlers();
+  initCajaHandlers();
+});
+
+// --------------------------------------------------------
+// MODULO COMPRAS (Elishan Huaylla)
+// --------------------------------------------------------
+async function cargarProveedores() {
+  try {
+    const res = await fetch(`${getBaseUrl()}/compras/proveedores`);
+    if (!res.ok) return;
+    const proveedores = await res.json();
+    const sel = document.getElementById("cProveedor");
+    if (sel) {
+      sel.innerHTML = proveedores.map(p => `<option value="${p.id}">${p.razonSocial} (RUC: ${p.ruc})</option>`).join("");
+    }
+  } catch (e) {
+    console.error("Error cargando proveedores:", e);
+  }
+}
+
+async function cargarCompras() {
+  const t0 = performance.now();
+  try {
+    const res = await fetch(`${getBaseUrl()}/compras`);
+    const data = await res.json();
+    const timeMs = Math.round(performance.now() - t0);
+    renderComprasTable(Array.isArray(data) ? data : []);
+  } catch (e) {
+    console.error("Error cargando compras:", e);
+  }
+}
+
+async function cargarResumenCompras() {
+  const t0 = performance.now();
+  try {
+    const res = await fetch(`${getBaseUrl()}/compras/resumen`);
+    if (!res.ok) return;
+    const data = await res.json();
+    const timeMs = Math.round(performance.now() - t0);
+
+    const cCount = document.getElementById("cKpiCount");
+    const cComprado = document.getElementById("cKpiComprado");
+    const cPagado = document.getElementById("cKpiPagado");
+    const cSaldo = document.getElementById("cKpiSaldo");
+    const cBox = document.getElementById("cResponseBox");
+
+    if (cCount) cCount.textContent = data.totalCompras || 0;
+    if (cComprado) cComprado.textContent = `S/ ${(data.montoTotalComprado || 0).toFixed(2)}`;
+    if (cPagado) cPagado.textContent = `S/ ${(data.montoTotalPagado || 0).toFixed(2)}`;
+    if (cSaldo) cSaldo.textContent = `S/ ${(data.saldoPendienteTotal || 0).toFixed(2)}`;
+    if (cBox) cBox.textContent = JSON.stringify(data, null, 2);
+  } catch (e) {
+    console.error("Error cargando resumen compras:", e);
+  }
+}
+
+function renderComprasTable(compras) {
+  const tbody = document.getElementById("comprasTbody");
+  if (!tbody) return;
+  if (!compras || compras.length === 0) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="10">No hay compras registradas</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = compras.map(c => {
+    const estadoClass = c.estado === 'PAGADA' ? 'status-registrada' : (c.estado === 'ANULADA' ? 'status-anulada' : 'status-pendiente');
+    return `<tr>
+      <td>#${c.id}</td>
+      <td><strong>${c.numeroComprobante}</strong></td>
+      <td>${c.proveedor ? c.proveedor.razonSocial : '--'}</td>
+      <td>${c.fechaEmision || '--'}</td>
+      <td>S/ ${(c.subtotal || 0).toFixed(2)}</td>
+      <td>S/ ${(c.igv || 0).toFixed(2)}</td>
+      <td><strong>S/ ${(c.total || 0).toFixed(2)}</strong></td>
+      <td><span style="color: ${c.saldoPendiente > 0 ? '#dc2626' : '#059669'}; font-weight: 700;">S/ ${(c.saldoPendiente || 0).toFixed(2)}</span></td>
+      <td><span class="badge ${estadoClass}">${c.estado}</span></td>
+      <td>
+        ${c.estado !== 'ANULADA' ? `<button class="secondary-btn sm-btn" onclick="anularCompra(${c.id})">Anular</button>` : '<span style="color:#64748b; font-size:11px;">Anulada</span>'}
+      </td>
+    </tr>`;
+  }).join("");
+}
+
+async function anularCompra(id) {
+  if (!confirm(`¿Confirmas la anulación de la compra #${id}?`)) return;
+  try {
+    const res = await fetch(`${getBaseUrl()}/compras/${id}/anular`, { method: "POST" });
+    if (res.ok) {
+      showToast(`Compra #${id} anulada exitosamente`, "success");
+      cargarCompras();
+      cargarResumenCompras();
+    } else {
+      const err = await res.json();
+      showToast(err.message || "Error anulando compra", "error");
+    }
+  } catch (e) {
+    showToast("Error de conexión al anular compra", "error");
+  }
+}
+
+function initComprasHandlers() {
+  const compraForm = document.getElementById("compraForm");
+  if (compraForm) {
+    compraForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const payload = {
+        numeroComprobante: document.getElementById("cComprobante").value.trim(),
+        proveedorId: parseInt(document.getElementById("cProveedor").value),
+        fechaEmision: new Date().toISOString().split("T")[0],
+        detalles: [
+          {
+            insumoId: 1,
+            nombreInsumo: document.getElementById("cInsumoNombre").value.trim(),
+            cantidad: parseFloat(document.getElementById("cCantidad").value),
+            precioUnitario: parseFloat(document.getElementById("cPrecio").value)
+          }
+        ]
+      };
+
+      try {
+        const res = await fetch(`${getBaseUrl()}/compras`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (res.ok) {
+          showToast(`Compra registrada: ${data.numeroComprobante}`, "success");
+          compraForm.reset();
+          cargarCompras();
+          cargarResumenCompras();
+        } else {
+          showToast(data.message || "Error al registrar compra", "error");
+        }
+      } catch (err) {
+        showToast("Error de conexión con la API de Compras", "error");
+      }
+    });
+  }
+
+  const provForm = document.getElementById("proveedorForm");
+  if (provForm) {
+    provForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const payload = {
+        ruc: document.getElementById("provRuc").value.trim(),
+        razonSocial: document.getElementById("provRazon").value.trim(),
+        telefono: "966123456",
+        email: "contacto@proveedor.pe",
+        direccion: "Lima, Perú"
+      };
+
+      try {
+        const res = await fetch(`${getBaseUrl()}/compras/proveedores`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (res.ok) {
+          showToast(`Proveedor registrado: ${data.razonSocial}`, "success");
+          provForm.reset();
+          cargarProveedores();
+        } else {
+          showToast(data.message || "Error al registrar proveedor", "error");
+        }
+      } catch (err) {
+        showToast("Error al conectar con la API", "error");
+      }
+    });
+  }
+
+  const amortizarForm = document.getElementById("amortizarForm");
+  if (amortizarForm) {
+    amortizarForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const id = document.getElementById("amIdCompra").value.trim();
+      const monto = parseFloat(document.getElementById("amMonto").value);
+
+      try {
+        const res = await fetch(`${getBaseUrl()}/compras/${id}/amortizar`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ montoPago: monto })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          showToast(`Abono realizado. Nuevo saldo: S/ ${(data.saldoPendiente || 0).toFixed(2)}`, "success");
+          amortizarForm.reset();
+          cargarCompras();
+          cargarResumenCompras();
+        } else {
+          showToast(data.message || "Error al amortizar compra", "error");
+        }
+      } catch (err) {
+        showToast("Error de conexión al amortizar", "error");
+      }
+    });
+  }
+
+  const btnRefreshC = document.getElementById("btnRefreshCompras");
+  if (btnRefreshC) {
+    btnRefreshC.addEventListener("click", () => {
+      cargarCompras();
+      cargarResumenCompras();
+      showToast("Compras actualizadas", "success");
+    });
+  }
+}
+
+// --------------------------------------------------------
+// MODULO PRODUCCIÓN (Isaí Armuto)
+// --------------------------------------------------------
+async function cargarProductosProduccion() {
+  try {
+    const res = await fetch(`${getBaseUrl()}/productos`);
+    if (!res.ok) return;
+    const productos = await res.json();
+    const sel = document.getElementById("pProducto");
+    if (sel) {
+      sel.innerHTML = productos.map(p => `<option value="${p.id}" data-name="${p.nombre}">${p.nombre} (Stock actual: ${p.stock})</option>`).join("");
+    }
+  } catch (e) {
+    console.error("Error cargando productos para producción:", e);
+  }
+}
+
+async function cargarOrdenes() {
+  try {
+    const res = await fetch(`${getBaseUrl()}/produccion/ordenes`);
+    const data = await res.json();
+    renderOrdenesTable(Array.isArray(data) ? data : []);
+  } catch (e) {
+    console.error("Error cargando órdenes:", e);
+  }
+}
+
+async function cargarResumenProduccion() {
+  try {
+    const res = await fetch(`${getBaseUrl()}/produccion/resumen`);
+    if (!res.ok) return;
+    const data = await res.json();
+
+    const pCount = document.getElementById("pKpiCount");
+    const pProg = document.getElementById("pKpiProgramado");
+    const pProd = document.getElementById("pKpiProducido");
+    const pEfic = document.getElementById("pKpiEficiencia");
+    const pBox = document.getElementById("pResponseBox");
+
+    if (pCount) pCount.textContent = data.totalOrdenes || 0;
+    if (pProg) pProg.textContent = `${data.totalCantidadProgramada || 0} Und`;
+    if (pProd) pProd.textContent = `${data.totalCantidadProducida || 0} Und`;
+    if (pEfic) pEfic.textContent = `${(data.porcentajeEficiencia || 0).toFixed(1)}%`;
+    if (pBox) pBox.textContent = JSON.stringify(data, null, 2);
+  } catch (e) {
+    console.error("Error cargando resumen producción:", e);
+  }
+}
+
+function renderOrdenesTable(ordenes) {
+  const tbody = document.getElementById("ordenesTbody");
+  if (!tbody) return;
+  if (!ordenes || ordenes.length === 0) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="8">No hay órdenes registradas</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = ordenes.map(o => {
+    const estadoClass = o.estado === 'COMPLETADA' ? 'status-registrada' : (o.estado === 'CANCELADA' ? 'status-anulada' : 'status-pendiente');
+    return `<tr>
+      <td>#${o.id}</td>
+      <td><strong>${o.codigoOrden}</strong></td>
+      <td>${o.nombreProducto}</td>
+      <td>${o.cantidadProgramada} Und</td>
+      <td>${o.cantidadProducida != null ? o.cantidadProducida + ' Und' : '--'}</td>
+      <td>${o.fechaInicio ? o.fechaInicio.split("T")[0] : '--'}</td>
+      <td><span class="badge ${estadoClass}">${o.estado}</span></td>
+      <td>
+        ${o.estado === 'PLANIFICADA' ? `<button class="secondary-btn sm-btn" onclick="iniciarOrden(${o.id})">Iniciar</button> ` : ''}
+        ${o.estado === 'EN_PROCESO' ? `<button class="primary-btn sm-btn" onclick="prepararCompletar(${o.id}, ${o.cantidadProgramada})">Completar</button> ` : ''}
+        ${(o.estado === 'PLANIFICADA' || o.estado === 'EN_PROCESO') ? `<button class="outline-btn sm-btn" onclick="cancelarOrden(${o.id})">Cancelar</button>` : ''}
+      </td>
+    </tr>`;
+  }).join("");
+}
+
+async function iniciarOrden(id) {
+  try {
+    const res = await fetch(`${getBaseUrl()}/produccion/ordenes/${id}/iniciar`, { method: "PUT" });
+    if (res.ok) {
+      showToast(`Orden #${id} iniciada en planta`, "success");
+      cargarOrdenes();
+      cargarResumenProduccion();
+    } else {
+      const err = await res.json();
+      showToast(err.message || "Error al iniciar orden", "error");
+    }
+  } catch (e) {
+    showToast("Error de conexión al iniciar orden", "error");
+  }
+}
+
+function prepararCompletar(id, cantidad) {
+  const idInput = document.getElementById("cmpIdOrden");
+  const cantInput = document.getElementById("cmpCantidad");
+  const venceInput = document.getElementById("cmpVence");
+  if (idInput) idInput.value = id;
+  if (cantInput) cantInput.value = cantidad;
+  if (venceInput) {
+    const d = new Date();
+    d.setFullYear(d.getFullYear() + 1);
+    venceInput.value = d.toISOString().split("T")[0];
+  }
+  showToast(`Datos de orden #${id} cargados en formulario de cierre`, "info");
+}
+
+async function cancelarOrden(id) {
+  if (!confirm(`¿Confirmas la cancelación de la orden #${id}?`)) return;
+  try {
+    const res = await fetch(`${getBaseUrl()}/produccion/ordenes/${id}/cancelar`, { method: "POST" });
+    if (res.ok) {
+      showToast(`Orden #${id} cancelada`, "success");
+      cargarOrdenes();
+      cargarResumenProduccion();
+    } else {
+      const err = await res.json();
+      showToast(err.message || "Error al cancelar orden", "error");
+    }
+  } catch (e) {
+    showToast("Error de conexión al cancelar orden", "error");
+  }
+}
+
+function initProduccionHandlers() {
+  const ordenForm = document.getElementById("ordenForm");
+  if (ordenForm) {
+    ordenForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const sel = document.getElementById("pProducto");
+      const prodId = parseInt(sel.value);
+      const prodNombre = sel.options[sel.selectedIndex].getAttribute("data-name") || "Producto Agroindustrial";
+      const cant = parseInt(document.getElementById("pCantidad").value);
+
+      const payload = {
+        productoId: prodId,
+        nombreProducto: prodNombre,
+        cantidadProgramada: cant,
+        observaciones: document.getElementById("pObs").value.trim(),
+        insumos: [
+          {
+            insumoId: 9,
+            nombreInsumo: "Bolsa Bilaminada al Vacío 1kg",
+            cantidadRequerida: cant,
+            cantidadConsumida: cant,
+            unidadMedida: "UNIDADES"
+          }
+        ]
+      };
+
+      try {
+        const res = await fetch(`${getBaseUrl()}/produccion/ordenes`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (res.ok) {
+          showToast(`Orden creada: ${data.codigoOrden}`, "success");
+          ordenForm.reset();
+          cargarOrdenes();
+          cargarResumenProduccion();
+        } else {
+          showToast(data.message || "Error al crear orden", "error");
+        }
+      } catch (err) {
+        showToast("Error de conexión con Producción", "error");
+      }
+    });
+  }
+
+  const completarForm = document.getElementById("completarOrdenForm");
+  if (completarForm) {
+    completarForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const id = document.getElementById("cmpIdOrden").value.trim();
+      const payload = {
+        cantidadProducida: parseInt(document.getElementById("cmpCantidad").value),
+        fechaVencimiento: document.getElementById("cmpVence").value
+      };
+
+      try {
+        const res = await fetch(`${getBaseUrl()}/produccion/ordenes/${id}/completar`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (res.ok) {
+          showToast(`Orden completada! Stock incrementado y Lote FEFO emitido.`, "success");
+          completarForm.reset();
+          cargarOrdenes();
+          cargarResumenProduccion();
+        } else {
+          showToast(data.message || "Error al completar orden", "error");
+        }
+      } catch (err) {
+        showToast("Error de conexión al completar orden", "error");
+      }
+    });
+  }
+
+  const btnRefreshO = document.getElementById("btnRefreshOrdenes");
+  if (btnRefreshO) {
+    btnRefreshO.addEventListener("click", () => {
+      cargarOrdenes();
+      cargarResumenProduccion();
+      showToast("Órdenes actualizadas", "success");
+    });
+  }
+}
+
+// --------------------------------------------------------
+// MODULO FINANZAS & CAJA (Brandon Ccalla)
+// --------------------------------------------------------
+async function cargarEstadoCaja() {
+  try {
+    const res = await fetch(`${getBaseUrl()}/caja/activa`);
+    const estadoEl = document.getElementById("fKpiEstado");
+    const saldoEl = document.getElementById("fKpiSaldo");
+    const crId = document.getElementById("crIdSesion");
+
+    if (res.ok) {
+      const sesion = await res.json();
+      if (estadoEl) {
+        estadoEl.textContent = `ABIERTA (ID: #${sesion.id})`;
+        estadoEl.parentElement.className = "kpi-card highlight-green";
+      }
+      if (saldoEl) saldoEl.textContent = `S/ ${(sesion.saldoTeorico || 0).toFixed(2)}`;
+      if (crId) crId.value = sesion.id;
+    } else {
+      if (estadoEl) {
+        estadoEl.textContent = "CERRADA";
+        estadoEl.parentElement.className = "kpi-card highlight-danger";
+      }
+      if (saldoEl) saldoEl.textContent = "S/ 0.00";
+      if (crId) crId.value = "";
+    }
+  } catch (e) {
+    console.error("Error verificando caja activa:", e);
+  }
+}
+
+async function cargarHistorialCaja() {
+  try {
+    const res = await fetch(`${getBaseUrl()}/caja/historial`);
+    const data = await res.json();
+    renderCajaTable(Array.isArray(data) ? data : []);
+  } catch (e) {
+    console.error("Error cargando historial caja:", e);
+  }
+}
+
+async function cargarResumenCaja() {
+  try {
+    const res = await fetch(`${getBaseUrl()}/caja/resumen`);
+    if (!res.ok) return;
+    const data = await res.json();
+
+    const fIng = document.getElementById("fKpiIngresos");
+    const fEgr = document.getElementById("fKpiEgresos");
+    const fBox = document.getElementById("fResponseBox");
+
+    if (fIng) fIng.textContent = `S/ ${(data.totalIngresos || 0).toFixed(2)}`;
+    if (fEgr) fEgr.textContent = `S/ ${(data.totalEgresos || 0).toFixed(2)}`;
+    if (fBox) fBox.textContent = JSON.stringify(data, null, 2);
+  } catch (e) {
+    console.error("Error cargando resumen caja:", e);
+  }
+}
+
+function renderCajaTable(sesiones) {
+  const tbody = document.getElementById("cajaTbody");
+  if (!tbody) return;
+  if (!sesiones || sesiones.length === 0) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="9">No hay sesiones de caja registradas</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = sesiones.map(s => {
+    const estadoClass = s.estado === 'ABIERTA' ? 'status-registrada' : 'status-anulada';
+    return `<tr>
+      <td>#${s.id}</td>
+      <td><strong>${s.cajeroNombre}</strong></td>
+      <td>${s.fechaApertura ? s.fechaApertura.replace("T", " ").substring(0, 16) : '--'}</td>
+      <td>${s.fechaCierre ? s.fechaCierre.replace("T", " ").substring(0, 16) : '<span style="color:#059669; font-weight:700;">En curso</span>'}</td>
+      <td>S/ ${(s.montoApertura || 0).toFixed(2)}</td>
+      <td>S/ ${(s.saldoTeorico || 0).toFixed(2)}</td>
+      <td>${s.saldoReal != null ? 'S/ ' + s.saldoReal.toFixed(2) : '--'}</td>
+      <td>${s.diferencia != null ? `<span style="color:${s.diferencia < 0 ? '#dc2626' : '#059669'};">S/ ${s.diferencia.toFixed(2)}</span>` : '--'}</td>
+      <td><span class="badge ${estadoClass}">${s.estado}</span></td>
+    </tr>`;
+  }).join("");
+}
+
+function initCajaHandlers() {
+  const movForm = document.getElementById("movimientoForm");
+  if (movForm) {
+    movForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const payload = {
+        tipo: document.getElementById("mTipo").value,
+        monto: parseFloat(document.getElementById("mMonto").value),
+        concepto: document.getElementById("mConcepto").value.trim(),
+        metodoPago: document.getElementById("mMetodo").value,
+        referencia: document.getElementById("mRef").value.trim()
+      };
+
+      try {
+        const res = await fetch(`${getBaseUrl()}/caja/movimientos`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (res.ok) {
+          showToast(`Movimiento registrado: S/ ${data.monto.toFixed(2)} (${data.tipo})`, "success");
+          movForm.reset();
+          cargarEstadoCaja();
+          cargarHistorialCaja();
+          cargarResumenCaja();
+        } else {
+          showToast(data.message || "Error al registrar movimiento", "error");
+        }
+      } catch (err) {
+        showToast("Error de conexión con Caja", "error");
+      }
+    });
+  }
+
+  const apForm = document.getElementById("aperturaForm");
+  if (apForm) {
+    apForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const payload = {
+        cajeroNombre: document.getElementById("apCajero").value.trim(),
+        montoApertura: parseFloat(document.getElementById("apMonto").value)
+      };
+
+      try {
+        const res = await fetch(`${getBaseUrl()}/caja/apertura`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (res.ok) {
+          showToast(`Turno abierto con éxito (ID: #${data.id})`, "success");
+          apForm.reset();
+          cargarEstadoCaja();
+          cargarHistorialCaja();
+          cargarResumenCaja();
+        } else {
+          showToast(data.message || "Error al abrir turno", "error");
+        }
+      } catch (err) {
+        showToast("Error de conexión al abrir turno", "error");
+      }
+    });
+  }
+
+  const crForm = document.getElementById("cierreForm");
+  if (crForm) {
+    crForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const id = document.getElementById("crIdSesion").value.trim();
+      if (!id) {
+        showToast("No hay ninguna sesión abierta para cerrar", "error");
+        return;
+      }
+      const payload = {
+        saldoReal: parseFloat(document.getElementById("crSaldoReal").value),
+        observaciones: document.getElementById("crObs").value.trim()
+      };
+
+      try {
+        const res = await fetch(`${getBaseUrl()}/caja/${id}/cierre`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (res.ok) {
+          showToast(`Caja cerrada. Diferencia asentada: S/ ${(data.diferencia || 0).toFixed(2)}`, "success");
+          crForm.reset();
+          cargarEstadoCaja();
+          cargarHistorialCaja();
+          cargarResumenCaja();
+        } else {
+          showToast(data.message || "Error al cerrar caja", "error");
+        }
+      } catch (err) {
+        showToast("Error de conexión al cerrar caja", "error");
+      }
+    });
+  }
+
+  const btnRefreshCaja = document.getElementById("btnRefreshCaja");
+  if (btnRefreshCaja) {
+    btnRefreshCaja.addEventListener("click", () => {
+      cargarEstadoCaja();
+      cargarHistorialCaja();
+      cargarResumenCaja();
+      showToast("Historial de caja actualizado", "success");
+    });
+  }
+}

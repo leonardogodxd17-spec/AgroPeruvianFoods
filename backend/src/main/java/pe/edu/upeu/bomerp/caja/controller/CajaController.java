@@ -49,4 +49,10 @@ public class CajaController {
     public ResponseEntity<List<SesionCajaResponse>> listarHistorial() {
         return ResponseEntity.ok(cajaService.listarHistorial());
     }
+
+    @Operation(summary = "Generar reporte consolidado de tesorería y arqueos")
+    @GetMapping("/resumen")
+    public ResponseEntity<CajaReporte> reporteResumen() {
+        return ResponseEntity.ok(cajaService.reporteResumen());
+    }
 }
