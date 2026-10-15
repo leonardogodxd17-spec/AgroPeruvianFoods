@@ -1,0 +1,24 @@
+<header class="header">
+  <h1>
+    <a routerLink="/" class="home-link">
+      <img src="favicon.ico" alt="" height="30" />
+    </a>
+    ERP Agro Peruvian Foods
+  </h1>
+</header>
+
+<div class="body">
+  <aside class="sidebar">
+    <nav style="display: flex; flex-direction: column; gap: 0.5rem;">
+      <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Inicio</a>
+      <a routerLink="/catalogo/categorias" routerLinkActive="active">Categorías</a>
+      <a routerLink="/catalogo/productos" routerLinkActive="active">Productos</a>
+      <a routerLink="/ventas/nueva" routerLinkActive="active">Nueva venta</a>
+      <a routerLink="/ventas/reporte" routerLinkActive="active">Reporte de ventas</a>
+    </nav>
+  </aside>
+
+  <main class="content">
+    <router-outlet />
+  </main>
+</div>

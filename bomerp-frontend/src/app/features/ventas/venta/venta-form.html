@@ -1,0 +1,92 @@
+<div class="venta-form-container">
+  <div class="header-section">
+    <h2>Registrar Nueva Venta</h2>
+    <p class="subtitle">AgroPeruvianFoods - Formulario Transaccional Cabecera-Detalle</p>
+  </div>
+
+  <form [formGroup]="form">
+    @if (error()) {
+      <div class="alert error">{{ error() }}</div>
+    }
+
+    <div class="table-container">
+      <table class="data-table" formArrayName="detalles">
+        <thead>
+          <tr>
+            <th>Producto (Búsqueda autocomplete)</th>
+            <th class="col-right">Precio unitario</th>
+            <th class="col-center">Cantidad</th>
+            <th class="col-right">Subtotal</th>
+            <th class="col-action">Acción</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (linea of lineasForm.controls; track $index) {
+            <tr [formGroupName]="$index">
+              <td>
+                <mat-form-field appearance="outline" class="w-full search-field" subscriptSizing="dynamic">
+                  <input
+                    type="text"
+                    matInput
+                    formControlName="busqueda"
+                    [matAutocomplete]="auto"
+                    placeholder="Escribe para buscar producto..."
+                  />
+                  <mat-autocomplete #auto="matAutocomplete" (optionSelected)="seleccionarProducto($index, $event)">
+                    @for (producto of opcionesPorLinea()[$index]; track producto.id) {
+                      <mat-option [value]="producto">
+                        <span class="option-title">{{ producto.nombre }}</span>
+                        <span class="option-meta"> — {{ producto.precio | currency: 'PEN' : 'S/ ' }} (Stock: {{ producto.stock }})</span>
+                      </mat-option>
+                    }
+                  </mat-autocomplete>
+                </mat-form-field>
+              </td>
+              <td class="col-right font-medium">
+                {{ preciosUnitarios()[$index] | currency: 'PEN' : 'S/ ' }}
+              </td>
+              <td class="col-center">
+                <input class="form-input text-center" type="number" step="1" min="1" formControlName="cantidad" />
+              </td>
+              <td class="col-right font-medium">
+                {{ subtotales()[$index] | currency: 'PEN' : 'S/ ' }}
+              </td>
+              <td class="col-action">
+                <button
+                  type="button"
+                  class="btn btn-danger btn-sm"
+                  [disabled]="lineasForm.length <= 1"
+                  (click)="quitarLinea($index)"
+                  title="Quitar esta línea">
+                  ✕ Quitar
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="3" class="total-label">Total General:</td>
+            <td class="col-right total-value">{{ total() | currency: 'PEN' : 'S/ ' }}</td>
+            <td></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <div class="actions-bar">
+      <button type="button" class="btn btn-secondary" (click)="agregarLinea()">
+        ＋ Agregar línea
+      </button>
+      <div class="spacer"></div>
+      <a routerLink="/ventas/reporte" class="btn btn-outline">Cancelar</a>
+      <button
+        type="button"
+        class="btn btn-primary"
+        (click)="confirmarYGuardar()"
+        [disabled]="loading()">
+        {{ loading() ? 'Registrando...' : 'Registrar venta' }}
+      </button>
+    </div>
+  </form>
+</div>

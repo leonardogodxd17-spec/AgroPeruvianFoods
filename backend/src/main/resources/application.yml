@@ -3,3 +3,20 @@ spring:
     name: bomerp-backend
   profiles:
     active: h2
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: http://localhost:8080/.well-known/jwks.json
+
+bomerp:
+  datasource:
+    seguridad:
+      url: jdbc:postgresql://localhost:5431/bomerp_seguridad
+      username: bomerp_seguridad
+      password: 123456
+      driver-class-name: org.postgresql.Driver
+
+jwt:
+  issuer: bomerp-backend
+  expiracion-segundos: 3600

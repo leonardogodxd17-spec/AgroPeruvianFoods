@@ -23,5 +23,6 @@ public class VentaResponse {
     private BigDecimal igv;
     private BigDecimal total;
     private String clienteNombre;
+    private String vendedorId;
     private List<DetalleVentaResponse> detalles;
 }

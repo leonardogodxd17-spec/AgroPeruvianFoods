@@ -31,27 +31,30 @@ public class VentaServiceImpl implements VentaService {
     @Override
     @Transactional(readOnly = true)
     public List<VentaResponse> buscar(EstadoVenta estado, LocalDateTime desde, LocalDateTime hasta,
-                                      String ordenarPor, String direccion) {
+                                      String ordenarPor, String direccion, String vendedorId) {
         Sort.Direction dir = "ASC".equalsIgnoreCase(direccion) ? Sort.Direction.ASC : Sort.Direction.DESC;
         String campoOrden = (ordenarPor != null && !ordenarPor.isBlank()) ? ordenarPor : "fecha";
         Sort sort = Sort.by(dir, campoOrden);
 
-        return ventaRepository.buscar(estado, desde, hasta, sort).stream()
+        return ventaRepository.buscar(estado, desde, hasta, vendedorId, sort).stream()
                 .map(this::toResponse)
                 .toList();
     }
 
     @Override
     @Transactional(readOnly = true)
-    public VentaResponse obtener(Long id) {
+    public VentaResponse obtener(Long id, String vendedorId) {
         Venta venta = ventaRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Venta no encontrada con ID: " + id));
+        if (vendedorId != null && !vendedorId.equals(venta.getVendedorId())) {
+            throw new pe.edu.upeu.bomerp.exception.AccesoDenegadoException("No tienes acceso a esta venta");
+        }
         return toResponse(venta);
     }
 
     @Override
     @Transactional
-    public VentaResponse crear(VentaRequest request) {
+    public VentaResponse crear(VentaRequest request, String vendedorId) {
         String ticket = "TKT-" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"))
                 + "-" + (int) (Math.random() * 900 + 100);
 
@@ -61,6 +64,7 @@ public class VentaServiceImpl implements VentaService {
                 .estado(EstadoVenta.REGISTRADA)
                 .metodoPago(request.getMetodoPago())
                 .clienteNombre(request.getClienteNombre() != null ? request.getClienteNombre() : "Cliente General")
+                .vendedorId(vendedorId)
                 .detalles(new ArrayList<>())
                 .build();
 
@@ -156,6 +160,7 @@ public class VentaServiceImpl implements VentaService {
                 .igv(v.getIgv())
                 .total(v.getTotal())
                 .clienteNombre(v.getClienteNombre())
+                .vendedorId(v.getVendedorId())
                 .detalles(detalles)
                 .build();
     }

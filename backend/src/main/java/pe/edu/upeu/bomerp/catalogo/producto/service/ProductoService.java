@@ -7,6 +7,7 @@ import java.util.List;
 
 public interface ProductoService {
     List<ProductoResponse> listar();
+    List<ProductoResponse> listar(Long categoriaId);
     ProductoResponse obtener(Long id);
     ProductoResponse crear(ProductoRequest request);
     ProductoResponse actualizar(Long id, ProductoRequest request);

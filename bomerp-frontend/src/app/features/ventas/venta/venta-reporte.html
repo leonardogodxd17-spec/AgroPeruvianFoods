@@ -1,0 +1,137 @@
+<div class="reporte-container">
+  <div class="header-section">
+    <div class="title-wrap">
+      <h2>Reporte y Consulta de Ventas</h2>
+      <p class="subtitle">AgroPeruvianFoods - Métricas agregadas y detalle transaccional</p>
+    </div>
+    <div class="actions">
+      <a routerLink="/ventas/nueva" class="btn btn-primary">＋ Nueva venta</a>
+    </div>
+  </div>
+
+  @if (error()) {
+    <div class="alert error">{{ error() }}</div>
+  }
+
+  <!-- Barra de Filtros: Estado y Rango de Fechas -->
+  <div class="filtros-card">
+    <div class="filtro-item">
+      <label for="filtroEstado">Estado</label>
+      <select id="filtroEstado" class="form-select" #filtro (change)="filtrarPorEstado(filtro.value)">
+        <option value="">Todos los estados</option>
+        <option value="REGISTRADA">REGISTRADA</option>
+        <option value="ANULADA">ANULADA</option>
+      </select>
+    </div>
+
+    <div class="filtro-item">
+      <label for="filtroDesde">Fecha Desde</label>
+      <input id="filtroDesde" type="date" class="form-input" #desde />
+    </div>
+
+    <div class="filtro-item">
+      <label for="filtroHasta">Fecha Hasta</label>
+      <input id="filtroHasta" type="date" class="form-input" #hasta />
+    </div>
+
+    <div class="filtro-actions">
+      <button type="button" class="btn btn-secondary" (click)="filtrarPorFecha(desde.value, hasta.value)">
+        Filtrar por fecha
+      </button>
+      <button type="button" class="btn btn-outline" (click)="desde.value = ''; hasta.value = ''; filtrarPorFecha('', '')">
+        Limpiar
+      </button>
+    </div>
+  </div>
+
+  @if (loading()) {
+    <p class="loading-state">Cargando reporte de ventas...</p>
+  }
+
+  @if (!loading()) {
+    <!-- Tarjetas de Métricas Agregadas -->
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <span class="kpi-title">Total de Ventas</span>
+        <span class="kpi-value">{{ totalVentas() }}</span>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-title">Monto Total Facturado</span>
+        <span class="kpi-value text-success">{{ montoTotal() | currency: 'PEN' : 'S/ ' }}</span>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-title">Ticket Promedio</span>
+        <span class="kpi-value text-accent">{{ ticketPromedio() | currency: 'PEN' : 'S/ ' }}</span>
+      </div>
+    </div>
+
+    <!-- Tabla de Ventas con Desglose de Detalle por Fila -->
+    <div class="table-container">
+      <table class="reporte-ventas">
+        <thead>
+          <tr>
+            <th>Fecha y Hora</th>
+            <th>Estado</th>
+            <th class="col-center">Líneas</th>
+            <th class="col-right">Total</th>
+            <th class="col-action">Acción</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (venta of ventas(); track venta.id) {
+            <tr class="fila-venta">
+              <td>{{ venta.fecha | date: 'dd/MM/yyyy HH:mm' }}</td>
+              <td>
+                <span class="badge" [class.badge-success]="venta.estado === 'REGISTRADA'" [class.badge-danger]="venta.estado === 'ANULADA'">
+                  {{ venta.estado }}
+                </span>
+              </td>
+              <td class="col-center">{{ venta.detalles.length }}</td>
+              <td class="col-right total-cell">{{ venta.total | currency: 'PEN' : 'S/ ' }}</td>
+              <td class="col-action">
+                @if (venta.estado === 'REGISTRADA') {
+                  <button type="button" class="btn btn-danger btn-sm" (click)="anular(venta.id)" title="Anular venta y restaurar stock">
+                    Anular
+                  </button>
+                } @else {
+                  <span class="text-muted">Inmutable</span>
+                }
+              </td>
+            </tr>
+            <tr class="fila-detalle">
+              <td colspan="5">
+                <div class="detalle-wrapper">
+                  <div class="detalle-header">Líneas de la venta #{{ venta.id }}:</div>
+                  <table class="tabla-detalle">
+                    <thead>
+                      <tr>
+                        <th>Producto</th>
+                        <th class="col-center">Cantidad</th>
+                        <th class="col-right">Precio unitario</th>
+                        <th class="col-right">Subtotal</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (detalle of venta.detalles; track detalle.productoId) {
+                        <tr>
+                          <td>{{ detalle.nombreProducto }}</td>
+                          <td class="col-center">{{ detalle.cantidad }}</td>
+                          <td class="col-right">{{ detalle.precioUnitario | currency: 'PEN' : 'S/ ' }}</td>
+                          <td class="col-right font-medium">{{ detalle.subtotal | currency: 'PEN' : 'S/ ' }}</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="5" class="empty-state">No hay ventas registradas para los filtros seleccionados.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>

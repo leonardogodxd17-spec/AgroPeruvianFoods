@@ -25,7 +25,16 @@ public class ProductoServiceImpl implements ProductoService {
     @Override
     @Transactional(readOnly = true)
     public List<ProductoResponse> listar() {
-        return productoRepository.findAll().stream()
+        return listar(null);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ProductoResponse> listar(Long categoriaId) {
+        List<Producto> productos = (categoriaId != null && categoriaId > 0)
+                ? productoRepository.findByCategoriaId(categoriaId)
+                : productoRepository.findAll();
+        return productos.stream()
                 .map(this::toResponse)
                 .toList();
     }
