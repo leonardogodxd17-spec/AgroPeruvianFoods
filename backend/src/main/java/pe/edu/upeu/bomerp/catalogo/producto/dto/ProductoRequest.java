@@ -32,5 +32,7 @@ public class ProductoRequest {
     @PositiveOrZero(message = "El stock debe ser positivo o cero")
     private Integer stock;
 
+    private String imagenUrl;
+
     private Long categoriaId;
 }

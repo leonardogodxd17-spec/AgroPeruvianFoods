@@ -1,0 +1,257 @@
+<div class="reporte-container">
+  <div class="header-section">
+    <div>
+      <span class="badge badge-primary">S09 · Consulta & Reportes Agregados</span>
+      <h2>Reporte de Ventas POS y Detalle de Líneas</h2>
+      <p class="subtitle">
+        Consulta analítica con agregados reactivos en vivo, detalle línea por línea continuo y anulación transaccional con reversión de inventario.
+      </p>
+    </div>
+    <div class="header-actions">
+      @if (auth.tieneRol('SUPERVISOR', 'ADMIN') && ventas().length > 0) {
+        <button
+          type="button"
+          class="btn btn-danger"
+          (click)="eliminarTodas()"
+          title="Eliminar todas las ventas registradas del reporte"
+        >
+          🗑️ Eliminar Todas las Ventas
+        </button>
+      }
+      <a routerLink="/ventas/nueva" class="btn btn-primary">
+        ➕ Nueva Venta POS
+      </a>
+    </div>
+  </div>
+
+  @if (error()) {
+    <div class="alert alert-danger">
+      <span class="alert-icon">⚠️</span>
+      <div>{{ error() }}</div>
+    </div>
+  }
+
+  <!-- Filtros de Consulta S09 -->
+  <div class="card filtros-card">
+    <div class="filtros-grid">
+      <div class="filtro-item">
+        <label for="filtroEstado" class="filtro-label">Filtrar por estado</label>
+        <select
+          id="filtroEstado"
+          #filtro
+          [value]="estadoFiltro()"
+          (change)="filtrarPorEstado(filtro.value)"
+          class="form-control"
+        >
+          <option value="">Todos los estados</option>
+          <option value="REGISTRADA">Registrada</option>
+          <option value="ANULADA">Anulada</option>
+        </select>
+      </div>
+
+      <div class="filtro-fechas-group">
+        <div class="filtro-item">
+          <label for="fechaDesde" class="filtro-label">Desde</label>
+          <input
+            id="fechaDesde"
+            type="date"
+            #desde
+            [value]="desdeFiltro()"
+            class="form-control"
+          />
+        </div>
+
+        <div class="filtro-item">
+          <label for="fechaHasta" class="filtro-label">Hasta</label>
+          <input
+            id="fechaHasta"
+            type="date"
+            #hasta
+            [value]="hastaFiltro()"
+            class="form-control"
+          />
+        </div>
+
+        <div class="filtro-botones">
+          <button
+            type="button"
+            class="btn btn-primary btn-filter"
+            (click)="filtrarPorFecha(desde.value, hasta.value)"
+          >
+            🔍 Filtrar por fecha
+          </button>
+          @if (desdeFiltro() || hastaFiltro() || estadoFiltro()) {
+            <button
+              type="button"
+              class="btn btn-secondary btn-reset"
+              (click)="desde.value = ''; hasta.value = ''; limpiarFiltros()"
+              title="Restablecer todos los filtros"
+            >
+              🔄 Limpiar
+            </button>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tarjetas de Agregados S09 -->
+  @if (!loading() && !error()) {
+    <div class="metricas-grid">
+      <div class="card metrica-card">
+        <div class="metrica-header">
+          <span class="metrica-icono">📦</span>
+          <span class="metrica-titulo">Total de Ventas</span>
+        </div>
+        <div class="metrica-valor">{{ totalVentas() }}</div>
+        <div class="metrica-pie">Transacciones encontradas</div>
+      </div>
+
+      <div class="card metrica-card highlight">
+        <div class="metrica-header">
+          <span class="metrica-icono">💰</span>
+          <span class="metrica-titulo">Monto Total Facturado</span>
+        </div>
+        <div class="metrica-valor text-success">
+          {{ montoTotal() | currency: 'PEN' : 'S/ ' }}
+        </div>
+        <div class="metrica-pie">Recaudación acumulada</div>
+      </div>
+
+      <div class="card metrica-card">
+        <div class="metrica-header">
+          <span class="metrica-icono">📈</span>
+          <span class="metrica-titulo">Ticket Promedio</span>
+        </div>
+        <div class="metrica-valor">
+          {{ ticketPromedio() | currency: 'PEN' : 'S/ ' }}
+        </div>
+        <div class="metrica-pie">Por orden de venta</div>
+      </div>
+    </div>
+
+    <!-- Tabla Principal con Detalle Continuo S09 -->
+    <div class="card tabla-card">
+      <div class="table-responsive">
+        <table class="reporte-ventas">
+          <thead>
+            <tr>
+              <th>Fecha y Hora</th>
+              <th>Estado</th>
+              <th>Líneas</th>
+              <th>Total de Venta</th>
+              <th style="text-align: center;">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (venta of ventas(); track venta.id) {
+              <!-- Fila 1: Cabecera de la Venta -->
+              <tr class="fila-venta">
+                <td>
+                  <strong>{{ venta.fecha | date: 'dd/MM/yyyy, hh:mm a' }}</strong>
+                  @if (venta.numeroTicket) {
+                    <div class="ticket-subtext">Ticket: {{ venta.numeroTicket }}</div>
+                  }
+                </td>
+                <td>
+                  <span
+                    class="badge"
+                    [class.badge-success]="venta.estado === 'REGISTRADA'"
+                    [class.badge-danger]="venta.estado === 'ANULADA'"
+                  >
+                    {{ venta.estado }}
+                  </span>
+                </td>
+                <td>
+                  <span class="badge badge-info">{{ venta.detalles.length }} línea(s)</span>
+                </td>
+                <td class="col-total-venta">
+                  {{ venta.total | currency: 'PEN' : 'S/ ' }}
+                </td>
+                <td style="text-align: center;">
+                  <div style="display: inline-flex; gap: 0.5rem; align-items: center; justify-content: center;">
+                    @if (venta.estado === 'REGISTRADA' && auth.tieneRol('SUPERVISOR', 'ADMIN')) {
+                      <button
+                        type="button"
+                        class="btn-anular"
+                        (click)="anular(venta.id)"
+                        title="Anular venta y restaurar stock en catálogo"
+                      >
+                        🚫 Anular
+                      </button>
+                    } @else if (venta.estado === 'ANULADA') {
+                      <span class="badge-anulado-label">Anulada</span>
+                    } @else {
+                      <span style="color:#94a3b8;font-size:0.75rem;font-weight:600;">Solo Supervisor</span>
+                    }
+                    @if (auth.tieneRol('ADMIN', 'SUPERVISOR')) {
+                      <button
+                        type="button"
+                        class="btn btn-danger btn-sm"
+                        style="padding: 0.35rem 0.6rem; font-size: 0.75rem;"
+                        (click)="eliminar(venta.id)"
+                        title="Eliminar esta venta del reporte permanentemente"
+                      >
+                        🗑️
+                      </button>
+                    }
+                  </div>
+                </td>
+              </tr>
+
+              <!-- Fila 2: Subtabla con el Detalle Real de Líneas -->
+              <tr class="fila-detalle">
+                <td colspan="5">
+                  <table class="tabla-detalle">
+                    <thead>
+                      <tr>
+                        <th>Producto del Catálogo</th>
+                        <th style="text-align: center;">Cantidad</th>
+                        <th style="text-align: right;">Precio Unitario</th>
+                        <th style="text-align: right;">Subtotal</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (detalle of venta.detalles; track detalle.productoId) {
+                        <tr>
+                          <td>
+                            <strong>{{ detalle.nombreProducto }}</strong>
+                          </td>
+                          <td style="text-align: center;">
+                            <span class="cantidad-badge">{{ detalle.cantidad }} un.</span>
+                          </td>
+                          <td style="text-align: right; font-family: 'JetBrains Mono', monospace;">
+                            {{ detalle.precioUnitario | currency: 'PEN' : 'S/ ' }}
+                          </td>
+                          <td style="text-align: right; font-family: 'JetBrains Mono', monospace; font-weight: 700;">
+                            {{ detalle.subtotal | currency: 'PEN' : 'S/ ' }}
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="5" class="empty-state">
+                  <div class="empty-content">
+                    <span class="empty-icon">📭</span>
+                    <p>No hay ventas registradas para este filtro o rango de fechas.</p>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+
+  @if (loading()) {
+    <div class="loading-box">
+      <div class="spinner"></div>
+      <p>Consultando transacciones y agregados...</p>
+    </div>
+  }
+</div>

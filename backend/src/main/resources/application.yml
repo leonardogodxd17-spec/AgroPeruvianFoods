@@ -3,3 +3,16 @@ spring:
     name: bomerp-backend
   profiles:
     active: h2
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:38080/realms/bomerp
+
+jwt:
+  issuer: bomerp-backend
+  expiracion-segundos: 3600
+
+bomerp:
+  cors:
+    allowed-origins: http://localhost:4200,http://localhost:3000,http://localhost:8080

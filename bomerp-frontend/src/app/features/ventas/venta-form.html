@@ -1,0 +1,173 @@
+<div class="transaccion-container">
+  <div class="header-section">
+    <div>
+      <span class="badge badge-primary">S09 · Formulario Transaccional</span>
+      <h2>Emitir Nueva Venta POS (Cabecera - Detalle)</h2>
+      <p class="subtitle">
+        Punto de Venta transaccional con FormArray dinámico, recálculo en vivo de subtotales y total con <code>computed</code>, y validación compuesta pre-vuelo (Zaggy Morales).
+      </p>
+    </div>
+    <div class="header-actions">
+      <a routerLink="/ventas/reporte" class="btn btn-secondary">
+        📊 Ir a Reporte de Ventas
+      </a>
+    </div>
+  </div>
+
+  @if (error()) {
+    <div class="alert alert-danger">
+      <span class="alert-icon">⚠️</span>
+      <div>
+        <strong>Error de Transacción:</strong> {{ error() }}
+      </div>
+    </div>
+  }
+
+  <form [formGroup]="form" (ngSubmit)="confirmarYGuardar()" class="card venta-card">
+    <div class="cabecera-grid">
+      <div class="form-group">
+        <label for="clienteNombre" class="form-label">Cliente / Razón Social</label>
+        <input
+          id="clienteNombre"
+          type="text"
+          formControlName="clienteNombre"
+          class="form-control"
+          placeholder="Nombre del cliente o razón social"
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="metodoPago" class="form-label">Método de Pago</label>
+        <select id="metodoPago" formControlName="metodoPago" class="form-control">
+          <option value="EFECTIVO">💵 Efectivo al Contado</option>
+          <option value="YAPE">📱 Yape (Billetera Digital)</option>
+          <option value="PLIN">📱 Plin (Billetera Digital)</option>
+          <option value="TRANSFERENCIA">🏦 Transferencia Bancaria (BCP / BBVA)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="detalles-section">
+      <div class="section-title-row">
+        <h3>Líneas de Detalle de Venta</h3>
+        <span class="badge badge-info">{{ lineasForm.length }} línea(s) en la orden</span>
+      </div>
+
+      <div class="table-responsive">
+        <table class="tabla-transaccional" formArrayName="detalles">
+          <thead>
+            <tr>
+              <th style="width: 45%;">Producto (Búsqueda en Catálogo)</th>
+              <th style="width: 15%;">Precio Unitario</th>
+              <th style="width: 15%;">Cantidad</th>
+              <th style="width: 15%;">Subtotal</th>
+              <th style="width: 10%; text-align: center;">Acción</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (linea of lineasForm.controls; track linea) {
+              <tr [formGroupName]="$index" class="linea-row">
+                <td>
+                  <mat-form-field class="full-width-field" appearance="outline">
+                    <input
+                      type="text"
+                      matInput
+                      formControlName="busqueda"
+                      [matAutocomplete]="auto"
+                      placeholder="Buscar por nombre (ej. Quinua, Palta...)"
+                    />
+                    <mat-autocomplete
+                      #auto="matAutocomplete"
+                      (optionSelected)="seleccionarProducto($index, $event)"
+                    >
+                      @for (producto of opcionesPorLinea()[$index]; track producto.id) {
+                        <mat-option [value]="producto">
+                          <span class="producto-opt-nombre">{{ producto.nombre }}</span>
+                          <span class="producto-opt-precio">
+                            — {{ producto.precio | currency: 'PEN' : 'S/ ' }} (Stock: {{ producto.stock }})
+                          </span>
+                        </mat-option>
+                      }
+                    </mat-autocomplete>
+                  </mat-form-field>
+                  @if (linea.get('productoId')?.invalid && linea.get('productoId')?.touched) {
+                    <span class="form-error">Debes seleccionar un producto del catálogo.</span>
+                  }
+                </td>
+                <td class="col-precio">
+                  <strong>{{ preciosUnitarios()[$index] | currency: 'PEN' : 'S/ ' }}</strong>
+                </td>
+                <td class="col-cantidad">
+                  <input
+                    type="number"
+                    step="1"
+                    min="1"
+                    formControlName="cantidad"
+                    class="form-control text-center"
+                  />
+                  @if (linea.get('cantidad')?.invalid && linea.get('cantidad')?.touched) {
+                    <span class="form-error">Mín. 1 unidad</span>
+                  }
+                </td>
+                <td class="col-subtotal">
+                  <span class="subtotal-badge">
+                    {{ subtotales()[$index] | currency: 'PEN' : 'S/ ' }}
+                  </span>
+                </td>
+                <td class="col-accion text-center">
+                  <button
+                    type="button"
+                    class="btn-quitar"
+                    (click)="quitarLinea($index)"
+                    [disabled]="lineasForm.length <= 1"
+                    title="Quitar esta línea de la venta"
+                  >
+                    🗑️ Quitar
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+          <tfoot>
+            <tr class="fila-resumen">
+              <td colspan="3" class="text-right">
+                <strong>TOTAL ESTIMADO EN VENTANILLA:</strong>
+              </td>
+              <td colspan="2" class="total-destacado">
+                {{ total() | currency: 'PEN' : 'S/ ' }}
+              </td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <div class="acciones-lineas">
+        <button type="button" class="btn btn-secondary" (click)="agregarLinea()">
+          ➕ Agregar otra línea
+        </button>
+      </div>
+    </div>
+
+    <div class="form-footer">
+      <div class="info-aviso">
+        💡 <em>El subtotal y total calculados en pantalla son una vista anticipada informativa. El backend calculará y certificará los valores autoritativos al registrar la transacción.</em>
+      </div>
+
+      <div class="botones-confirmacion">
+        <a routerLink="/ventas/reporte" class="btn btn-secondary">Cancelar</a>
+        <button
+          type="button"
+          class="btn btn-primary btn-submit"
+          (click)="confirmarYGuardar()"
+          [disabled]="loading() || form.invalid"
+        >
+          @if (loading()) {
+            <span class="spinner-small"></span> Registrando venta...
+          } @else {
+            ✅ Registrar Venta (S/ {{ total().toFixed(2) }})
+          }
+        </button>
+      </div>
+    </div>
+  </form>
+</div>

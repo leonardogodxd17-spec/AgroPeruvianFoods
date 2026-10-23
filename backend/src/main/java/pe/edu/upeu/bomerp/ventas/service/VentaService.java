@@ -9,9 +9,23 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public interface VentaService {
-    List<VentaResponse> buscar(EstadoVenta estado, LocalDateTime desde, LocalDateTime hasta, String ordenarPor, String direccion);
-    VentaResponse obtener(Long id);
-    VentaResponse crear(VentaRequest request);
+    default List<VentaResponse> buscar(EstadoVenta estado, LocalDateTime desde, LocalDateTime hasta, String ordenarPor, String direccion) {
+        return buscar(estado, desde, hasta, ordenarPor, direccion, null);
+    }
+    List<VentaResponse> buscar(EstadoVenta estado, LocalDateTime desde, LocalDateTime hasta, String ordenarPor, String direccion, String vendedorId);
+
+    default VentaResponse obtener(Long id) {
+        return obtener(id, null);
+    }
+    VentaResponse obtener(Long id, String vendedorId);
+
+    default VentaResponse crear(VentaRequest request) {
+        return crear(request, null);
+    }
+    VentaResponse crear(VentaRequest request, String vendedorId);
+
     VentaResponse anular(Long id);
     VentaReporte reporte(EstadoVenta estado, LocalDateTime desde, LocalDateTime hasta);
+    void eliminarTodas();
+    void eliminar(Long id);
 }

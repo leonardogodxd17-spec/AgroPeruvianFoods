@@ -108,4 +108,126 @@ class VentaServiceTest {
         assertThrows(BusinessConflictException.class, () -> ventaService.crear(request));
         verify(ventaRepository, never()).save(any(Venta.class));
     }
+
+    @Test
+    @DisplayName("Debe anular una venta registrada restaurando el stock de cada producto")
+    void anular_ventaRegistrada_debeRestaurarStockYCambiarEstado() {
+        pe.edu.upeu.bomerp.ventas.entity.DetalleVenta detalle = pe.edu.upeu.bomerp.ventas.entity.DetalleVenta.builder()
+                .id(1L)
+                .productoId(1L)
+                .nombreProducto("Quinua Blanca Real Orgánica 1kg")
+                .precioUnitario(new BigDecimal("10.00"))
+                .cantidad(5)
+                .subtotal(new BigDecimal("50.00"))
+                .build();
+
+        Venta venta = Venta.builder()
+                .id(200L)
+                .numeroTicket("TKT-20261021-001")
+                .estado(EstadoVenta.REGISTRADA)
+                .total(new BigDecimal("50.00"))
+                .detalles(new java.util.ArrayList<>(List.of(detalle)))
+                .build();
+
+        when(ventaRepository.findById(200L)).thenReturn(java.util.Optional.of(venta));
+        when(ventaRepository.save(any(Venta.class))).thenAnswer(i -> i.getArgument(0));
+
+        VentaResponse response = ventaService.anular(200L);
+
+        assertNotNull(response);
+        assertEquals(EstadoVenta.ANULADA, response.getEstado());
+        verify(productoService, times(1)).restaurarStock(1L, 5);
+        verify(ventaRepository, times(1)).save(venta);
+    }
+
+    @Test
+    @DisplayName("Debe rechazar con VentaYaAnuladaException si la venta ya está en estado ANULADA")
+    void anular_ventaYaAnulada_debeLanzarExcepcion() {
+        Venta venta = Venta.builder()
+                .id(201L)
+                .estado(EstadoVenta.ANULADA)
+                .build();
+
+        when(ventaRepository.findById(201L)).thenReturn(java.util.Optional.of(venta));
+
+        assertThrows(pe.edu.upeu.bomerp.exception.VentaYaAnuladaException.class, () -> ventaService.anular(201L));
+        verify(productoService, never()).restaurarStock(any(), any());
+        verify(ventaRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("RN5: Debe persistir el vendedorId tomado del JWT en la cabecera de la venta")
+    void crear_conVendedorId_debeAsignarVendedorIdEnCabecera() {
+        DetalleVentaRequest item = new DetalleVentaRequest();
+        item.setProductoId(1L);
+        item.setCantidad(1);
+
+        VentaRequest request = new VentaRequest();
+        request.setClienteNombre("Cliente Prueba");
+        request.setDetalles(List.of(item));
+
+        when(productoService.obtener(1L)).thenReturn(mockProducto);
+        when(ventaRepository.save(any(Venta.class))).thenAnswer(i -> {
+            Venta v = i.getArgument(0);
+            v.setId(301L);
+            return v;
+        });
+
+        VentaResponse response = ventaService.crear(request, "vendedor-uuid-123");
+
+        assertNotNull(response);
+        assertEquals("vendedor-uuid-123", response.getVendedorId());
+    }
+
+    @Test
+    @DisplayName("RN8: Vendedor solo puede consultar su propia venta (mismo vendedorId)")
+    void obtener_propiaVenta_debePermitirAcceso() {
+        Venta venta = Venta.builder()
+                .id(401L)
+                .vendedorId("1")
+                .estado(EstadoVenta.REGISTRADA)
+                .total(new BigDecimal("100.00"))
+                .build();
+
+        when(ventaRepository.findById(401L)).thenReturn(java.util.Optional.of(venta));
+
+        VentaResponse response = ventaService.obtener(401L, "1");
+        assertNotNull(response);
+        assertEquals(401L, response.getId());
+        assertEquals("1", response.getVendedorId());
+    }
+
+    @Test
+    @DisplayName("RN8: Vendedor no puede consultar venta ajena y lanza AccesoDenegadoException (HTTP 403)")
+    void obtener_ventaAjena_debeLanzarAccesoDenegadoException() {
+        Venta venta = Venta.builder()
+                .id(402L)
+                .vendedorId("1")
+                .estado(EstadoVenta.REGISTRADA)
+                .total(new BigDecimal("100.00"))
+                .build();
+
+        when(ventaRepository.findById(402L)).thenReturn(java.util.Optional.of(venta));
+
+        assertThrows(pe.edu.upeu.bomerp.exception.AccesoDenegadoException.class,
+                () -> ventaService.obtener(402L, "2"));
+    }
+
+    @Test
+    @DisplayName("RN8: Supervisor/Admin (vendedorId null) puede consultar cualquier venta sin importar de quién sea")
+    void obtener_comoSupervisor_debePermitirCualquierVenta() {
+        Venta venta = Venta.builder()
+                .id(403L)
+                .vendedorId("1")
+                .estado(EstadoVenta.REGISTRADA)
+                .total(new BigDecimal("100.00"))
+                .build();
+
+        when(ventaRepository.findById(403L)).thenReturn(java.util.Optional.of(venta));
+
+        VentaResponse response = ventaService.obtener(403L, null);
+        assertNotNull(response);
+        assertEquals(403L, response.getId());
+    }
 }
+

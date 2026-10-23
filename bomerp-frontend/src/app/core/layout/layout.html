@@ -1,0 +1,141 @@
+<div class="app-shell">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-logo">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+        </svg>
+      </div>
+      <div class="brand-text">
+        <h2>AGRO PERUVIAN</h2>
+        <span>FOODS S.A.C. · ERP</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-section-title">PRINCIPAL</div>
+      <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" class="nav-item">
+        <span class="nav-icon">📊</span>
+        <span>Dashboard General</span>
+      </a>
+
+      @if (auth.autenticado()) {
+        <!-- Módulo 1: Finanzas & Caja (SUPERVISOR, ADMIN) -->
+        @if (auth.tieneRol('SUPERVISOR', 'ADMIN')) {
+          <div class="nav-section-title">MÓDULO 1 · FINANZAS</div>
+          <a routerLink="/caja" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" class="nav-item">
+            <span class="nav-icon">💵</span>
+            <span>Sesión & Movimientos</span>
+          </a>
+        }
+
+        <!-- Módulo 2: Ventas POS (S09 / S11) -->
+        <div class="nav-section-title">MÓDULO 2 · VENTAS (S09)</div>
+        <a routerLink="/ventas/reporte" routerLinkActive="active" class="nav-item">
+          <span class="nav-icon">📊</span>
+          <span>Reporte de Ventas</span>
+        </a>
+        @if (auth.tieneRol('VENDEDOR', 'SUPERVISOR')) {
+          <a routerLink="/ventas/nueva" routerLinkActive="active" class="nav-item">
+            <span class="nav-icon">🧾</span>
+            <span>Nueva Venta (FormArray)</span>
+          </a>
+        }
+
+        <!-- Módulo 3: Producción & BOM + Catálogo -->
+        <div class="nav-section-title">MÓDULO 3 · PRODUCCIÓN</div>
+        @if (auth.tieneRol('SUPERVISOR', 'ADMIN')) {
+          <a routerLink="/produccion" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" class="nav-item">
+            <span class="nav-icon">⚙️</span>
+            <span>Órdenes de Planta</span>
+          </a>
+        }
+        @if (auth.tieneRol('ADMIN')) {
+          <a routerLink="/produccion/nueva" routerLinkActive="active" class="nav-item">
+            <span class="nav-icon">📋</span>
+            <span>Nueva Orden BOM</span>
+          </a>
+        }
+        <a routerLink="/catalogo/categorias" routerLinkActive="active" class="nav-item">
+          <span class="nav-icon">🏷️</span>
+          <span>Categorías (S07 Base)</span>
+        </a>
+        <a routerLink="/catalogo/productos" routerLinkActive="active" class="nav-item">
+          <span class="nav-icon">🥑</span>
+          <span>Productos (S08 Dependiente)</span>
+        </a>
+
+        <!-- Módulo 4: Compras (SUPERVISOR, ADMIN) -->
+        @if (auth.tieneRol('SUPERVISOR', 'ADMIN')) {
+          <div class="nav-section-title">MÓDULO 4 · COMPRAS</div>
+          <a routerLink="/compras" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" class="nav-item">
+            <span class="nav-icon">📦</span>
+            <span>Compras de Insumos</span>
+          </a>
+          <a routerLink="/compras/proveedores" routerLinkActive="active" class="nav-item">
+            <span class="nav-icon">🏭</span>
+            <span>Proveedores (Maestro)</span>
+          </a>
+        }
+      }
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="team-badge">
+        <div class="team-dot"></div>
+        <div>
+          <div class="team-name">Los Hijos del Backend</div>
+          <div class="team-course">LP2 · BD2 · ADS (G2G3)</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Area -->
+  <div class="main-wrapper">
+    <!-- Top Header -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <span class="session-badge">S11 · Keycloak PKCE</span>
+        <span class="status-indicator">
+          <span class="pulse-dot"></span>
+          Keycloak 26: 38080 (bomerp)
+        </span>
+      </div>
+
+      <div class="topbar-right">
+        <div class="trace-box" title="Interceptor HTTP activo: genera UUID único por petición">
+          <span class="trace-label">X-Trace-ID:</span>
+          <code>{{ activeTraceId() | slice:0:13 }}...</code>
+        </div>
+
+        <div class="clock-box">
+          🕒 {{ currentDateTime() | date:'dd/MM/yyyy HH:mm:ss' }}
+        </div>
+
+        @if (auth.autenticado()) {
+          <div class="user-profile" title="Sesión activa Keycloak">
+            <div class="user-avatar">{{ (auth.usuario()?.nombre || 'US').substring(0,2).toUpperCase() }}</div>
+            <div class="user-info">
+              <span class="user-name">{{ auth.usuario()?.nombre }}</span>
+              <span class="user-role">{{ auth.roles().join(', ') }}</span>
+            </div>
+            <button type="button" class="btn-auth-logout" (click)="auth.cerrarSesion()" title="Cerrar sesión en Keycloak">
+              Cerrar sesión
+            </button>
+          </div>
+        } @else {
+          <button type="button" class="btn-auth-login" (click)="auth.iniciarLogin()" title="Iniciar sesión con Keycloak">
+            🔐 Iniciar sesión
+          </button>
+        }
+      </div>
+    </header>
+
+    <!-- Routed Content Outlet -->
+    <main class="page-container">
+      <router-outlet />
+    </main>
+  </div>
+</div>

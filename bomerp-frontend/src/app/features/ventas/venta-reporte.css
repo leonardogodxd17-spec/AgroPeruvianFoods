@@ -1,0 +1,184 @@
+.reporte-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.header-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.subtitle {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  margin-top: 0.25rem;
+}
+
+.filtros-card {
+  padding: 1.25rem 1.5rem;
+}
+
+.filtros-grid {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 1.5rem;
+}
+
+.filtro-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.filtro-label {
+  font-size: 0.825rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.filtro-fechas-group {
+  display: flex;
+  align-items: flex-end;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.filtro-botones {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.btn-filter {
+  padding: 0.6rem 1.2rem;
+}
+
+.btn-reset {
+  padding: 0.6rem 0.9rem;
+}
+
+.metricas-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.25rem;
+}
+
+.metrica-card {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  border-left: 4px solid var(--border);
+}
+
+.metrica-card.highlight {
+  border-left-color: var(--primary);
+  background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%);
+}
+
+.metrica-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.metrica-icono {
+  font-size: 1.2rem;
+}
+
+.metrica-titulo {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.metrica-valor {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--text-main);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.text-success {
+  color: var(--primary);
+}
+
+.metrica-pie {
+  font-size: 0.775rem;
+  color: var(--text-muted);
+}
+
+.tabla-card {
+  padding: 0;
+  overflow: hidden;
+}
+
+.ticket-subtext {
+  font-size: 0.775rem;
+  color: var(--text-muted);
+  font-family: 'JetBrains Mono', monospace;
+  margin-top: 0.2rem;
+}
+
+.col-total-venta {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--primary);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.btn-anular {
+  background: #fee2e2;
+  color: #dc2626;
+  border: 1px solid #fca5a5;
+  padding: 0.4rem 0.85rem;
+  border-radius: var(--radius);
+  font-size: 0.825rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-anular:hover {
+  background: #fecaca;
+  color: #991b1b;
+  box-shadow: 0 2px 4px rgba(220, 38, 38, 0.2);
+}
+
+.badge-anulado-label {
+  font-size: 0.775rem;
+  color: #94a3b8;
+  font-style: italic;
+}
+
+.cantidad-badge {
+  display: inline-block;
+  padding: 0.2rem 0.5rem;
+  background: #f1f5f9;
+  border-radius: var(--radius);
+  font-weight: 600;
+  font-size: 0.825rem;
+}
+
+.empty-state {
+  padding: 3rem !important;
+  text-align: center;
+}
+
+.empty-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-muted);
+}
+
+.empty-icon {
+  font-size: 2.5rem;
+}

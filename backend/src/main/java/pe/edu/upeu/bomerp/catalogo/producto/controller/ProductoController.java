@@ -21,10 +21,10 @@ public class ProductoController {
 
     private final ProductoService productoService;
 
-    @Operation(summary = "Listar todos los productos con su categoría")
+    @Operation(summary = "Listar todos los productos con su categoría y filtro opcional por categoría")
     @GetMapping
-    public ResponseEntity<List<ProductoResponse>> listar() {
-        return ResponseEntity.ok(productoService.listar());
+    public ResponseEntity<List<ProductoResponse>> listar(@RequestParam(required = false) Long categoriaId) {
+        return ResponseEntity.ok(productoService.listar(categoriaId));
     }
 
     @Operation(summary = "Obtener producto por ID")

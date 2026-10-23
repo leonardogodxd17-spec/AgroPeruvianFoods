@@ -1,0 +1,188 @@
+<div class="feature-container">
+  <div class="page-header">
+    <div>
+      <div class="badge badge-warning">MÓDULO 3 · PRODUCCIÓN Y RECETAS BOM</div>
+      <h1>Órdenes de Trabajo en Planta & Lotes FEFO</h1>
+      <p class="subtitle">Responsable: Isaí Armuto Uñapilco</p>
+    </div>
+    <div class="header-actions">
+      <a routerLink="/produccion/nueva" class="btn btn-primary">
+        📋 Planificar Nueva Orden BOM
+      </a>
+      <a routerLink="/catalogo/categorias" class="btn btn-secondary">
+        🏷️ Categorías
+      </a>
+      <button class="btn btn-secondary" (click)="cargarDatos()">🔄</button>
+    </div>
+  </div>
+
+  @if (error()) {
+    <div class="alert alert-danger">
+      <span>⚠️ {{ error() }}</span>
+    </div>
+  }
+  @if (successMsg()) {
+    <div class="alert alert-success">
+      <span>✅ {{ successMsg() }}</span>
+    </div>
+  }
+
+  <!-- KPI Reporte -->
+  @if (resumen(); as r) {
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <span class="metric-icon">📑</span>
+        <div>
+          <span class="metric-label">Órdenes Planificadas</span>
+          <h3 class="metric-value">{{ r.totalOrdenes }}</h3>
+        </div>
+      </div>
+      <div class="metric-card">
+        <span class="metric-icon text-success">🏭</span>
+        <div>
+          <span class="metric-label">Órdenes Completadas</span>
+          <h3 class="metric-value text-success">{{ r.ordenesCompletadas }}</h3>
+        </div>
+      </div>
+      <div class="metric-card">
+        <span class="metric-icon text-warning">📦</span>
+        <div>
+          <span class="metric-label">Unidades Fabricadas</span>
+          <h3 class="metric-value text-warning">{{ r.unidadesTotalesProducidas }}</h3>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Tabla de Órdenes -->
+  <div class="card mt-4">
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Código Orden</th>
+            <th>Producto a Elaborar</th>
+            <th>Programado</th>
+            <th>Producido</th>
+            <th>Inicio</th>
+            <th>Fin</th>
+            <th>Estado</th>
+            <th class="text-center">Acciones de Planta</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (o of ordenes(); track o.id) {
+            <tr>
+              <td><code>{{ o.codigoOrden }}</code></td>
+              <td><strong>{{ o.nombreProducto }}</strong></td>
+              <td>{{ o.cantidadProgramada }} u.</td>
+              <td>{{ o.cantidadProducida != null ? o.cantidadProducida + ' u.' : '—' }}</td>
+              <td>{{ o.fechaInicio ? (o.fechaInicio | date:'dd/MM/yyyy HH:mm') : '—' }}</td>
+              <td>{{ o.fechaFin ? (o.fechaFin | date:'dd/MM/yyyy HH:mm') : '—' }}</td>
+              <td>
+                <span class="badge" 
+                  [class.badge-info]="o.estado === 'PROGRAMADA'"
+                  [class.badge-warning]="o.estado === 'EN_PROCESO'"
+                  [class.badge-success]="o.estado === 'COMPLETADA'"
+                  [class.badge-danger]="o.estado === 'CANCELADA'">
+                  {{ o.estado }}
+                </span>
+              </td>
+              <td class="text-center">
+                <div class="btn-group">
+                  <button class="btn btn-secondary btn-sm" (click)="verDetalle(o)">👁️ Insumos</button>
+                  @if (o.estado === 'PROGRAMADA') {
+                    <button class="btn btn-primary btn-sm" (click)="iniciar(o)">▶️ Iniciar</button>
+                  }
+                  @if (o.estado === 'EN_PROCESO') {
+                    <button class="btn btn-success btn-sm" (click)="abrirCompletar(o)">✅ Completar Lote</button>
+                  }
+                </div>
+              </td>
+            </tr>
+          } @empty {
+            @if (!loading()) {
+              <tr>
+                <td colspan="8" class="text-center py-4">No hay órdenes de producción registradas.</td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Completar Orden y Generar Lote FEFO -->
+@if (modalCompletar() && ordenSeleccionada(); as ord) {
+  <div class="modal-backdrop">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Completar Orden: {{ ord.codigoOrden }}</h3>
+        <button class="modal-close" (click)="modalCompletar.set(false)">×</button>
+      </div>
+      <p class="subtitle mb-3">Producto: <strong>{{ ord.nombreProducto }}</strong></p>
+      <form [formGroup]="formCompletar" (ngSubmit)="confirmarCompletar()">
+        <div class="form-group">
+          <label class="form-label">Cantidad Producida Conforme (Unidades)</label>
+          <input type="number" formControlName="cantidadProducida" class="form-control" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Fecha de Caducidad / Vencimiento (Criterio FEFO)</label>
+          <input type="date" formControlName="fechaVencimiento" class="form-control" />
+        </div>
+        <div class="alert alert-info">
+          <span>Esta acción ingresará el stock al catálogo y generará la etiqueta del lote FEFO.</span>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="modalCompletar.set(false)">Cancelar</button>
+          <button type="submit" class="btn btn-primary" [disabled]="loading()">Dar de Alta al Inventario</button>
+        </div>
+      </form>
+    </div>
+  </div>
+}
+
+<!-- Modal Insumos Consumidos (BOM) -->
+@if (modalDetalle() && ordenSeleccionada(); as ord) {
+  <div class="modal-backdrop">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Lista de Materiales BOM: {{ ord.codigoOrden }}</h3>
+        <button class="modal-close" (click)="modalDetalle.set(false)">×</button>
+      </div>
+      <p class="subtitle mb-3">Insumos y empaques deducidos para <strong>{{ ord.nombreProducto }}</strong></p>
+      
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Insumo</th>
+              <th>Requerido</th>
+              <th>Consumido</th>
+              <th>U.M.</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (ins of ord.insumos; track ins.id || ins.insumoId) {
+              <tr>
+                <td><strong>{{ ins.nombreInsumo }}</strong></td>
+                <td>{{ ins.cantidadRequerida }}</td>
+                <td>{{ ins.cantidadConsumida || ins.cantidadRequerida }}</td>
+                <td><span class="badge badge-info">{{ ins.unidadMedida }}</span></td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="4" class="text-center py-3">Insumos deducidos según receta estándar BOM.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="modalDetalle.set(false)">Cerrar</button>
+      </div>
+    </div>
+  </div>
+}

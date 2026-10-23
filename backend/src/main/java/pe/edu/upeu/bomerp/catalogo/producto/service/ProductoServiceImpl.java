@@ -24,8 +24,11 @@ public class ProductoServiceImpl implements ProductoService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<ProductoResponse> listar() {
-        return productoRepository.findAll().stream()
+    public List<ProductoResponse> listar(Long categoriaId) {
+        List<Producto> productos = (categoriaId != null)
+                ? productoRepository.findByCategoria_Id(categoriaId)
+                : productoRepository.findAll();
+        return productos.stream()
                 .map(this::toResponse)
                 .toList();
     }
@@ -51,6 +54,7 @@ public class ProductoServiceImpl implements ProductoService {
                 .nombre(request.getNombre())
                 .precio(request.getPrecio())
                 .stock(request.getStock())
+                .imagenUrl(request.getImagenUrl())
                 .categoria(categoria)
                 .build();
 
@@ -72,6 +76,9 @@ public class ProductoServiceImpl implements ProductoService {
         producto.setNombre(request.getNombre());
         producto.setPrecio(request.getPrecio());
         producto.setStock(request.getStock());
+        if (request.getImagenUrl() != null) {
+            producto.setImagenUrl(request.getImagenUrl());
+        }
 
         return toResponse(productoRepository.save(producto));
     }
@@ -103,6 +110,12 @@ public class ProductoServiceImpl implements ProductoService {
     @Override
     @Transactional
     public void aumentarStock(Long id, Integer cantidad) {
+        restaurarStock(id, cantidad);
+    }
+
+    @Override
+    @Transactional
+    public void restaurarStock(Long id, Integer cantidad) {
         Producto producto = productoRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado con ID: " + id));
 
@@ -120,6 +133,9 @@ public class ProductoServiceImpl implements ProductoService {
                 .nombre(p.getNombre())
                 .precio(p.getPrecio())
                 .stock(p.getStock())
+                .imagenUrl(p.getImagenUrl() != null && !p.getImagenUrl().isBlank()
+                        ? p.getImagenUrl()
+                        : "/assets/productos/producto-" + p.getId() + ".png")
                 .categoria(cat)
                 .build();
     }

@@ -1,0 +1,111 @@
+<div class="home-container">
+  <!-- Hero Section -->
+  <div class="hero-card">
+    <div class="hero-content">
+      <div class="hero-badge">ARQUITECTURA SPA · SESIÓN 07</div>
+      <h1 class="hero-title">ERP Agro Peruvian Foods S.A.C.</h1>
+      <p class="hero-subtitle">
+        Plataforma empresarial integrada para el control financiero de caja, punto de venta (POS), 
+        producción por lotes con recetas BOM y gestión de compras a proveedores agroindustriales.
+      </p>
+      <div class="hero-meta">
+        <span class="meta-tag">Angular 22.2 (Zoneless)</span>
+        <span class="meta-tag">Spring Boot 3 + Oracle / H2</span>
+        <span class="meta-tag">X-Trace-ID HTTP Interceptor</span>
+      </div>
+    </div>
+    <div class="hero-status">
+      <div class="status-card" [class.online]="apiOnline()">
+        <div class="status-icon">{{ apiOnline() ? '🟢' : '🟡' }}</div>
+        <div>
+          <div class="status-title">{{ apiOnline() ? 'API REST En Línea' : 'API Standby / Local' }}</div>
+          <div class="status-sub">http://localhost:8080/api/v1</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modules Grid: The 4 modules of the team -->
+  <div class="section-header">
+    <h2>Módulos de Negocio Integrados (4 Integrantes)</h2>
+    <p>Cada miembro del equipo lidera un componente transaccional Full-Stack.</p>
+  </div>
+
+  <div class="modules-grid">
+    <!-- Módulo 1: Caja -->
+    <div class="module-card">
+      <div class="module-header">
+        <span class="module-icon">💵</span>
+        <span class="badge badge-success">Módulo 1</span>
+      </div>
+      <h3 class="module-name">Gestión Financiera de Caja</h3>
+      <p class="module-desc">
+        Apertura/cierre formal de turnos de caja chica, arqueo estricto (saldo teórico vs físico) y registro de movimientos de ingresos y egresos.
+      </p>
+      <div class="module-lead">
+        <strong>Líder:</strong> Brandon Andree Ccalla Colquehuanca
+      </div>
+      <div class="module-actions">
+        <a routerLink="/caja" class="btn btn-primary btn-sm">Ver Sesión & Arqueo</a>
+      </div>
+    </div>
+
+    <!-- Módulo 2: Ventas -->
+    <div class="module-card">
+      <div class="module-header">
+        <span class="module-icon">🛒</span>
+        <span class="badge badge-info">Módulo 2</span>
+      </div>
+      <h3 class="module-name">Ventas y Tickets POS</h3>
+      <p class="module-desc">
+        Transacciones comerciales en tienda física y ferias, cálculo de IGV, emisión de tickets ESC/POS y reposición atómica de inventario al anular.
+      </p>
+      <div class="module-lead">
+        <strong>Líder:</strong> Zaggy Leonardo Morales Auquipata
+      </div>
+      <div class="module-actions">
+        <a routerLink="/ventas" class="btn btn-primary btn-sm">Historial Ventas</a>
+        <a routerLink="/ventas/nueva" class="btn btn-secondary btn-sm">Emitir Ticket</a>
+      </div>
+    </div>
+
+    <!-- Módulo 3: Producción -->
+    <div class="module-card">
+      <div class="module-header">
+        <span class="module-icon">⚙️</span>
+        <span class="badge badge-warning">Módulo 3</span>
+      </div>
+      <h3 class="module-name">Producción y Envasado BOM</h3>
+      <p class="module-desc">
+        Planificación en planta para derivados de cacao y aceite de coco, deducción de insumos por receta (BOM) y generación de lotes con criterio FEFO.
+      </p>
+      <div class="module-lead">
+        <strong>Líder:</strong> Isaí Armuto Uñapilco
+      </div>
+      <div class="module-actions">
+        <a routerLink="/produccion" class="btn btn-primary btn-sm">Órdenes Planta</a>
+        <a routerLink="/catalogo/productos" class="btn btn-secondary btn-sm">Productos S08</a>
+        <a routerLink="/catalogo/categorias" class="btn btn-secondary btn-sm">Categorías S07</a>
+      </div>
+    </div>
+
+    <!-- Módulo 4: Compras -->
+    <div class="module-card">
+      <div class="module-header">
+        <span class="module-icon">📦</span>
+        <span class="badge badge-success">Módulo 4</span>
+      </div>
+      <h3 class="module-name">Compras & Proveedores</h3>
+      <p class="module-desc">
+        Adquisición de materias primas (quinua, cacao) y material de empaque, amortización de pagos a proveedores y control de cuentas por pagar.
+      </p>
+      <div class="module-lead">
+        <strong>Líder:</strong> Elisban Huaylla Nestor
+      </div>
+      <div class="module-actions">
+        <a routerLink="/compras/proveedores" class="btn btn-primary btn-sm">Proveedores</a>
+        <a routerLink="/compras" class="btn btn-secondary btn-sm">Compras</a>
+      </div>
+    </div>
+  </div>
+</div>

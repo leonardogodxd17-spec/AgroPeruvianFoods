@@ -1,0 +1,59 @@
+<div class="feature-container">
+  <div class="page-header">
+    <div>
+      <div class="badge badge-warning">MÓDULO 3 · CATÁLOGO (S07 BASE)</div>
+      <h1>{{ id() ? 'Editar Categoría' : 'Nueva Categoría' }}</h1>
+      <p class="subtitle">
+        {{ id() ? 'Modificar datos de la categoría #' + id() : 'Registrar nueva categoría independiente de productos' }}
+      </p>
+    </div>
+    <div class="header-actions">
+      <a routerLink="/catalogo/categorias" class="btn btn-secondary">← Volver a la Lista</a>
+    </div>
+  </div>
+
+  @if (error()) {
+    <div class="alert alert-danger">
+      <span>⚠️ {{ error() }}</span>
+    </div>
+  }
+
+  <div class="card form-card">
+    <form [formGroup]="form" (ngSubmit)="guardar()">
+      <div class="form-group">
+        <label class="form-label" for="nombre">Nombre de la Categoría *</label>
+        <input
+          id="nombre"
+          type="text"
+          formControlName="nombre"
+          placeholder="Ej: Aceites y Grasas Vegetales"
+          class="form-control"
+        />
+        @if (mensajeValidacion('nombre'); as msg) {
+          <span class="form-error">{{ msg }}</span>
+        }
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="descripcion">Descripción (Opcional)</label>
+        <textarea
+          id="descripcion"
+          formControlName="descripcion"
+          rows="3"
+          placeholder="Breve descripción del grupo de productos..."
+          class="form-control"
+        ></textarea>
+        @if (mensajeValidacion('descripcion'); as msg) {
+          <span class="form-error">{{ msg }}</span>
+        }
+      </div>
+
+      <div class="form-actions mt-4">
+        <button type="submit" class="btn btn-primary" [disabled]="loading() || errorCarga()">
+          {{ loading() ? 'Guardando...' : (id() ? '💾 Actualizar Categoría' : '➕ Guardar Categoría') }}
+        </button>
+        <a routerLink="/catalogo/categorias" class="btn btn-secondary">Cancelar</a>
+      </div>
+    </form>
+  </div>
+</div>

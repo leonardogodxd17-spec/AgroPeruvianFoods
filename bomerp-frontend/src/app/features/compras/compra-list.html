@@ -1,0 +1,191 @@
+<div class="feature-container">
+  <div class="page-header">
+    <div>
+      <div class="badge badge-success">MÓDULO 4 · COMPRAS DE INSUMOS</div>
+      <h1>Historial de Adquisiciones y Cuentas por Pagar</h1>
+      <p class="subtitle">Responsable: Elisban Huaylla Nestor</p>
+    </div>
+    <div class="header-actions">
+      <a routerLink="/compras/proveedores" class="btn btn-secondary">
+        🏭 Directorio de Proveedores
+      </a>
+      <button class="btn btn-secondary" (click)="cargarDatos()">🔄</button>
+    </div>
+  </div>
+
+  @if (error()) {
+    <div class="alert alert-danger">
+      <span>⚠️ {{ error() }}</span>
+    </div>
+  }
+  @if (successMsg()) {
+    <div class="alert alert-success">
+      <span>✅ {{ successMsg() }}</span>
+    </div>
+  }
+
+  <!-- KPI Reporte -->
+  @if (resumen(); as r) {
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <span class="metric-icon">📦</span>
+        <div>
+          <span class="metric-label">Facturas de Compra</span>
+          <h3 class="metric-value">{{ r.totalCompras }}</h3>
+        </div>
+      </div>
+      <div class="metric-card">
+        <span class="metric-icon">💰</span>
+        <div>
+          <span class="metric-label">Total Facturado</span>
+          <h3 class="metric-value">{{ r.totalFacturado | currency:'PEN':'S/ ' }}</h3>
+        </div>
+      </div>
+      <div class="metric-card">
+        <span class="metric-icon text-danger">⏳</span>
+        <div>
+          <span class="metric-label">Saldo Pendiente de Pago</span>
+          <h3 class="metric-value text-danger">{{ r.totalPendientePago | currency:'PEN':'S/ ' }}</h3>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Tabla de Compras -->
+  <div class="card mt-4">
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Comprobante</th>
+            <th>Proveedor ID</th>
+            <th>Fecha Emisión</th>
+            <th>Subtotal</th>
+            <th>IGV (18%)</th>
+            <th>Total Factura</th>
+            <th>Saldo Pendiente</th>
+            <th>Estado</th>
+            <th class="text-center">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (c of compras(); track c.id) {
+            <tr>
+              <td><code>{{ c.numeroComprobante }}</code></td>
+              <td>Proveedor #{{ c.proveedorId }}</td>
+              <td>{{ c.fechaEmision }}</td>
+              <td>{{ c.subtotal | currency:'PEN':'S/ ' }}</td>
+              <td>{{ c.igv | currency:'PEN':'S/ ' }}</td>
+              <td><strong>{{ c.total | currency:'PEN':'S/ ' }}</strong></td>
+              <td>
+                <span [class.text-danger]="c.saldoPendiente > 0" [class.text-success]="c.saldoPendiente === 0">
+                  <strong>{{ c.saldoPendiente | currency:'PEN':'S/ ' }}</strong>
+                </span>
+              </td>
+              <td>
+                <span class="badge" 
+                  [class.badge-success]="c.estado === 'PAGADA'"
+                  [class.badge-warning]="c.estado === 'REGISTRADA'"
+                  [class.badge-danger]="c.estado === 'ANULADA'">
+                  {{ c.estado }}
+                </span>
+              </td>
+              <td class="text-center">
+                <div class="btn-group">
+                  <button class="btn btn-secondary btn-sm" (click)="verDetalle(c)">👁️ Detalle</button>
+                  @if (c.saldoPendiente > 0 && c.estado !== 'ANULADA') {
+                    <button class="btn btn-primary btn-sm" (click)="abrirAmortizar(c)">💳 Amortizar</button>
+                  }
+                </div>
+              </td>
+            </tr>
+          } @empty {
+            @if (!loading()) {
+              <tr>
+                <td colspan="9" class="text-center py-4">No hay compras registradas en el módulo.</td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Amortizar Pago -->
+@if (modalAmortizar() && compraSeleccionada(); as cmp) {
+  <div class="modal-backdrop">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Amortizar Pago: {{ cmp.numeroComprobante }}</h3>
+        <button class="modal-close" (click)="modalAmortizar.set(false)">×</button>
+      </div>
+      <div class="alert alert-info">
+        <span>Saldo por liquidar: <strong>{{ cmp.saldoPendiente | currency:'PEN':'S/ ' }}</strong></span>
+      </div>
+      <form [formGroup]="formAmortizar" (ngSubmit)="confirmarAmortizar()">
+        <div class="form-group">
+          <label class="form-label">Monto a Amortizar / Pagar (S/) *</label>
+          <input type="number" step="0.10" formControlName="montoAmortizado" class="form-control" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Método de Pago</label>
+          <select formControlName="metodoPago" class="form-control">
+            <option value="TRANSFERENCIA">Transferencia Bancaria</option>
+            <option value="EFECTIVO">Efectivo de Caja</option>
+            <option value="CHEQUE">Cheque Gerencia</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Número de Operación / Referencia</label>
+          <input type="text" formControlName="referencia" class="form-control" />
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="modalAmortizar.set(false)">Cancelar</button>
+          <button type="submit" class="btn btn-primary" [disabled]="loading()">Confirmar Amortización</button>
+        </div>
+      </form>
+    </div>
+  </div>
+}
+
+<!-- Modal Detalle Insumos de Compra -->
+@if (modalDetalle() && compraSeleccionada(); as cmp) {
+  <div class="modal-backdrop">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Detalle de Compra: {{ cmp.numeroComprobante }}</h3>
+        <button class="modal-close" (click)="modalDetalle.set(false)">×</button>
+      </div>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Insumo</th>
+              <th>Cantidad</th>
+              <th>Precio Unit.</th>
+              <th>Subtotal</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (d of cmp.detalles; track d.id || d.insumoId) {
+              <tr>
+                <td><strong>{{ d.nombreInsumo || 'Insumo #' + d.insumoId }}</strong></td>
+                <td>{{ d.cantidad }}</td>
+                <td>{{ d.precioUnitario | currency:'PEN':'S/ ' }}</td>
+                <td>{{ (d.subtotal || (d.cantidad * d.precioUnitario)) | currency:'PEN':'S/ ' }}</td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="4" class="text-center py-3">Insumos ingresados al almacén central.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="modalDetalle.set(false)">Cerrar</button>
+      </div>
+    </div>
+  </div>
+}

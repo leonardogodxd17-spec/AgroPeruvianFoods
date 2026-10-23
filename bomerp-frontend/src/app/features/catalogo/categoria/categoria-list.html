@@ -1,0 +1,82 @@
+<div class="feature-container">
+  <div class="page-header">
+    <div>
+      <div class="badge badge-warning">MÓDULO 3 · CATÁLOGO (S07 BASE)</div>
+      <h1>Gestión de Categorías de Productos</h1>
+      <p class="subtitle">Tabla maestra independiente requerida por la sesión S07 de BomERP</p>
+    </div>
+    <div class="header-actions">
+      @if (auth.tieneRol('ADMIN')) {
+        <a routerLink="/catalogo/categorias/nueva" class="btn btn-primary">
+          ➕ Nueva Categoría
+        </a>
+      }
+      <button class="btn btn-secondary" (click)="cargarDatos()">
+        🔄 Actualizar
+      </button>
+    </div>
+  </div>
+
+  @if (loading()) {
+    <div class="loading-box">
+      <div class="spinner"></div>
+      <p>Cargando categorías...</p>
+    </div>
+  }
+
+  @if (error()) {
+    <div class="alert alert-danger">
+      <span>⚠️ {{ error() }}</span>
+    </div>
+  }
+
+  @if (successMsg()) {
+    <div class="alert alert-success">
+      <span>✅ {{ successMsg() }}</span>
+    </div>
+  }
+
+  <div class="card mt-2">
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Nombre de Categoría</th>
+            <th>Descripción</th>
+            <th class="text-center">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (categoria of categorias(); track categoria.id) {
+            <tr>
+              <td><strong>#{{ categoria.id }}</strong></td>
+              <td><strong>{{ categoria.nombre }}</strong></td>
+              <td>{{ categoria.descripcion || '—' }}</td>
+              <td class="text-center">
+                <div class="btn-group">
+                  @if (auth.tieneRol('ADMIN')) {
+                    <a [routerLink]="['/catalogo/categorias', categoria.id]" class="btn btn-secondary btn-sm">
+                      ✏️ Editar
+                    </a>
+                    <button class="btn btn-danger btn-sm" (click)="eliminar(categoria)">
+                      🗑️ Eliminar
+                    </button>
+                  } @else {
+                    <span style="color:#94a3b8;font-size:0.75rem;font-weight:600;">Lectura</span>
+                  }
+                </div>
+              </td>
+            </tr>
+          } @empty {
+            @if (!loading() && !error()) {
+              <tr>
+                <td colspan="4" class="text-center py-4">No hay categorías registradas en el catálogo.</td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

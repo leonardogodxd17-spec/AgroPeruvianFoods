@@ -26,10 +26,12 @@ public interface VentaRepository extends JpaRepository<Venta, Long> {
         WHERE (:estado IS NULL OR v.estado = :estado)
           AND (:desde IS NULL OR v.fecha >= :desde)
           AND (:hasta IS NULL OR v.fecha <= :hasta)
+          AND (:vendedorId IS NULL OR v.vendedorId = :vendedorId)
         """)
     List<Venta> buscar(@Param("estado") EstadoVenta estado,
                        @Param("desde") LocalDateTime desde,
                        @Param("hasta") LocalDateTime hasta,
+                       @Param("vendedorId") String vendedorId,
                        Sort sort);
 
     @Query("""
