@@ -26,13 +26,37 @@
   <form [formGroup]="form" (ngSubmit)="confirmarYGuardar()" class="card venta-card">
     <div class="cabecera-grid">
       <div class="form-group">
+        <label for="dniBusqueda" class="form-label">Buscar por DNI (RENIEC / APIsPERU)</label>
+        <div style="display: flex; gap: 8px;">
+          <input
+            #dniInput
+            id="dniBusqueda"
+            type="text"
+            maxlength="8"
+            class="form-control"
+            placeholder="8 dígitos (ej. 72345678)"
+            (keydown.enter)="$event.preventDefault(); buscarPorDni(dniInput.value)"
+          />
+          <button
+            type="button"
+            class="btn btn-secondary"
+            style="white-space: nowrap; padding: 0.5rem 1rem;"
+            [disabled]="buscandoDni()"
+            (click)="buscarPorDni(dniInput.value)"
+          >
+            {{ buscandoDni() ? '⏳ Buscando...' : '🔍 Buscar' }}
+          </button>
+        </div>
+      </div>
+
+      <div class="form-group">
         <label for="clienteNombre" class="form-label">Cliente / Razón Social</label>
         <input
           id="clienteNombre"
           type="text"
           formControlName="clienteNombre"
           class="form-control"
-          placeholder="Nombre del cliente o razón social"
+          placeholder="Nombre del cliente o autocompletado por DNI"
         />
       </div>
 
@@ -157,6 +181,15 @@
         <a routerLink="/ventas/reporte" class="btn btn-secondary">Cancelar</a>
         <button
           type="button"
+          class="btn btn-secondary btn-preview"
+          (click)="previsualizarBorrador()"
+          [disabled]="loading() || lineasForm.length === 0"
+          title="Ver cómo quedará el comprobante impreso antes de emitir"
+        >
+          👁️ Previsualizar Ticket
+        </button>
+        <button
+          type="button"
           class="btn btn-primary btn-submit"
           (click)="confirmarYGuardar()"
           [disabled]="loading() || form.invalid"
@@ -170,4 +203,119 @@
       </div>
     </div>
   </form>
+
+  <!-- MODAL DE TICKET TÉRMICO POS (ESC/POS 80mm) -->
+  @if (mostrarModalTicket() && ventaGenerada(); as ticket) {
+    <div class="modal-backdrop" (click)="cerrarModalTicket()">
+      <div class="modal-content ticket-modal-wrapper" (click)="$event.stopPropagation()">
+        <!-- Header del Modal -->
+        <div class="modal-top-bar">
+          <div class="modal-title-group">
+            <span class="badge" [class.badge-warning]="esBorrador()" [class.badge-success]="!esBorrador()">
+              {{ esBorrador() ? 'BORRADOR / VISTA PREVIA' : 'VENTA EMITIDA CON ÉXITO' }}
+            </span>
+            <span class="ticket-status-chip">
+              {{ esBorrador() ? 'Comprobante no asentado' : 'Ticket Autorizado Oficial' }}
+            </span>
+          </div>
+          <button type="button" class="btn-close-modal" (click)="cerrarModalTicket()" title="Cerrar modal">&times;</button>
+        </div>
+
+        <!-- Papel Térmico ESC/POS 80mm -->
+        <div class="ticket-paper printable-ticket">
+          <div class="ticket-header">
+            <div class="ticket-logo-brand">🌿 AGRO PERUVIAN FOODS S.A.C.</div>
+            <p class="ticket-sub">RUC: 20608974512</p>
+            <p class="ticket-sub">Derivados de Cacao y Aceite de Coco Prensado en Frío</p>
+            <p class="ticket-sub">Av. Manuel Prado 1050, Lurigancho - Lima</p>
+            <div class="ticket-divider">========================================</div>
+            <h4 class="ticket-number">
+              {{ esBorrador() ? 'VISTA PREVIA DE TICKET' : ('TICKET DE VENTA N° ' + ticket.numeroTicket) }}
+            </h4>
+            <div class="ticket-meta-grid">
+              <div><strong>FECHA:</strong> {{ ticket.fecha | date:'dd/MM/yyyy HH:mm:ss' }}</div>
+              <div><strong>CLIENTE:</strong> {{ ticket.clienteNombre || 'Cliente General' }}</div>
+              <div><strong>PAGO:</strong> {{ ticket.metodoPago }}</div>
+              <div><strong>ESTADO:</strong> {{ ticket.estado }}</div>
+            </div>
+            <div class="ticket-divider">----------------------------------------</div>
+          </div>
+
+          <div class="ticket-body">
+            <table class="ticket-table">
+              <thead>
+                <tr>
+                  <th style="text-align: left;">DESCRIPCIÓN</th>
+                  <th style="text-align: center;">CANT</th>
+                  <th style="text-align: right;">P.UNIT</th>
+                  <th style="text-align: right;">TOTAL</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (det of ticket.detalles; track det.productoId || $index) {
+                  <tr>
+                    <td class="td-prod">{{ det.nombreProducto }}</td>
+                    <td class="td-cant text-center">{{ det.cantidad }}</td>
+                    <td class="td-price text-right">{{ (det.precioUnitario || 0) | currency:'PEN':'S/ ' }}</td>
+                    <td class="td-subtotal text-right"><strong>{{ (det.subtotal || 0) | currency:'PEN':'S/ ' }}</strong></td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+            <div class="ticket-divider">----------------------------------------</div>
+          </div>
+
+          <div class="ticket-totals">
+            <div class="tot-row">
+              <span>OP. GRAVADA (SUBTOTAL):</span>
+              <span>{{ (ticket.subtotal || 0) | currency:'PEN':'S/ ' }}</span>
+            </div>
+            <div class="tot-row">
+              <span>I.G.V. (18%):</span>
+              <span>{{ (ticket.igv || 0) | currency:'PEN':'S/ ' }}</span>
+            </div>
+            <div class="tot-row grand-total">
+              <span>TOTAL A PAGAR:</span>
+              <span class="total-big">{{ (ticket.total || 0) | currency:'PEN':'S/ ' }}</span>
+            </div>
+          </div>
+
+          <div class="ticket-divider">========================================</div>
+
+          <div class="ticket-footer">
+            <p>¡Gracias por apoyar la agricultura sostenible!</p>
+            <p class="ticket-security-code">
+              * HASH: {{ ticket.numeroTicket || 'BOMERP-POS' }}-{{ ticket.total }} *
+            </p>
+            <div class="ticket-barcode-sim">||||| | |||| ||||| | || ||||| |||| | |||||</div>
+            <p class="ticket-fine-print">Representación física de ticket POS - Agro Peruvian Foods</p>
+          </div>
+        </div>
+
+        <!-- Acciones del Modal -->
+        <div class="modal-footer-actions no-print">
+          <button type="button" class="btn btn-secondary" (click)="cerrarModalTicket()">
+            Cerrar
+          </button>
+
+          <button type="button" class="btn btn-info btn-print" (click)="imprimirTicket()">
+            🖨️ Imprimir Ticket (ESC/POS)
+          </button>
+
+          @if (esBorrador()) {
+            <button type="button" class="btn btn-primary" (click)="mostrarModalTicket.set(false); confirmarYGuardar()">
+              ✅ Confirmar y Emitir
+            </button>
+          } @else {
+            <button type="button" class="btn btn-success" (click)="nuevaVenta()">
+              ➕ Nueva Venta
+            </button>
+            <button type="button" class="btn btn-secondary" (click)="irAReporte()">
+              📊 Ver en Reporte
+            </button>
+          }
+        </div>
+      </div>
+    </div>
+  }
 </div>

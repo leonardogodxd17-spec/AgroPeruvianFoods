@@ -217,6 +217,14 @@ async function submitVenta(overridePayload = null) {
       renderCart();
       fetchVentas();     // Refrescar tabla
       fetchCatalog();    // Refrescar stock actualizado de catálogo
+
+      // Previsualizar ticket de impresión automáticamente al generar la venta
+      if (data && data.id) {
+        if (!AppState.lastVentas.some((v) => v.id === data.id)) {
+          AppState.lastVentas.unshift(data);
+        }
+        openTicketModal(data.id);
+      }
     }
   } catch (err) {
     const elapsed = Math.round(performance.now() - startTime);
@@ -224,6 +232,61 @@ async function submitVenta(overridePayload = null) {
       error: "Error de conexión con el backend",
       detalle: err.message
     });
+  }
+}
+
+// ==========================================================================
+// 3.1 CONSULTAR DNI (RENIEC / APISPERU)
+// ==========================================================================
+async function consultarDniCliente() {
+  const dniInput = document.getElementById("dniCliente");
+  const dni = dniInput ? dniInput.value.trim() : "";
+  const clienteInput = document.getElementById("cliente");
+  const btnBuscar = document.getElementById("btnBuscarDni");
+
+  if (!/^[0-9]{8}$/.test(dni)) {
+    alert("Por favor ingrese un número de DNI válido de 8 dígitos numéricos.");
+    if (dniInput) dniInput.focus();
+    return;
+  }
+
+  const baseUrl = getBaseUrl();
+  const startTime = performance.now();
+  const originalText = btnBuscar ? btnBuscar.textContent : "Buscar";
+  if (btnBuscar) {
+    btnBuscar.textContent = "⏳...";
+    btnBuscar.disabled = true;
+  }
+
+  try {
+    const res = await fetch(`${baseUrl}/personas/dni/${dni}`);
+    const elapsed = Math.round(performance.now() - startTime);
+    const data = await res.json();
+
+    showApiResponse("GET", `/api/v1/personas/dni/${dni}`, res.status, elapsed, data);
+
+    if (res.ok && data) {
+      const nombreCompleto = data.nombreCompleto || `${data.nombres || ""} ${data.apellidoPaterno || ""} ${data.apellidoMaterno || ""}`.trim();
+      if (clienteInput) {
+        clienteInput.value = nombreCompleto;
+        clienteInput.style.transition = "background-color 0.4s ease";
+        clienteInput.style.backgroundColor = "rgba(46, 204, 113, 0.25)";
+        setTimeout(() => { clienteInput.style.backgroundColor = ""; }, 2500);
+      }
+    } else {
+      alert(data.message || "No se encontraron datos para el DNI consultado.");
+    }
+  } catch (err) {
+    const elapsed = Math.round(performance.now() - startTime);
+    showApiResponse("GET", `/api/v1/personas/dni/${dni}`, 500, elapsed, {
+      error: "Error al consultar DNI",
+      detalle: err.message
+    });
+  } finally {
+    if (btnBuscar) {
+      btnBuscar.textContent = originalText;
+      btnBuscar.disabled = false;
+    }
   }
 }
 
@@ -441,6 +504,21 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     submitVenta();
   });
+
+  // Búsqueda de persona por DNI (RENIEC / APIsPERU)
+  const btnBuscarDni = document.getElementById("btnBuscarDni");
+  if (btnBuscarDni) {
+    btnBuscarDni.addEventListener("click", consultarDniCliente);
+  }
+  const dniClienteInput = document.getElementById("dniCliente");
+  if (dniClienteInput) {
+    dniClienteInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        consultarDniCliente();
+      }
+    });
+  }
 
   // Añadir item al detalle
   document.getElementById("btnAddItem").addEventListener("click", addItemToCart);

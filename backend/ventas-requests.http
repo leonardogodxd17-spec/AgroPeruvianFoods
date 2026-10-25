@@ -180,3 +180,22 @@ Accept: application/json
 # Ejecuta consultas de agregación para el resumen financiero del POS.
 GET {{baseUrl}}/ventas/resumen?estado=REGISTRADA
 Accept: application/json
+
+### --------------------------------------------------------------------------
+### BLOQUE 4: CONSULTAS DNI / RENIEC - INTEGRACIÓN APISPERU
+### --------------------------------------------------------------------------
+
+### 4.1 Consultar DNI de Persona Natural para el POS
+# Retorna nombres, apellidos y nombre completo autocompletado para el ticket
+GET {{baseUrl}}/personas/dni/72345678
+Accept: application/json
+
+### 4.2 Error por DNI Inválido (Longitud distinta a 8 dígitos)
+GET {{baseUrl}}/personas/dni/123
+Accept: application/json
+
+### 4.3 Prueba Directa a APIsPERU con Token Configurado (Verificación RENIEC en vivo)
+GET https://dniruc.apisperu.com/api/v1/dni/72345678?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6Imxlb25hcmRvZ29keGQuMTdAZ21haWwuY29tIiwianRpIjoiYzcwODgyZmU3YTFlNTY5OSJ9.vxUHL6GXADATQ041Cxy-udmQuckkImli1MuoBxtg6bs
+Accept: application/json
+
+

@@ -114,9 +114,16 @@
 
           <form id="ventaForm" novalidate>
             <div class="form-row">
+              <div class="form-group flex-1">
+                <label for="dniCliente">DNI del Cliente (RENIEC):</label>
+                <div style="display:flex; gap:6px;">
+                  <input type="text" id="dniCliente" maxlength="8" placeholder="8 dígitos" style="font-family:monospace; font-weight:600;">
+                  <button type="button" id="btnBuscarDni" class="secondary-btn" style="white-space:nowrap; padding:0 10px; font-size:0.85rem;" title="Buscar en RENIEC vía APIsPERU">🔍 Buscar</button>
+                </div>
+              </div>
               <div class="form-group flex-2">
                 <label for="cliente">Cliente / Razón Social <span class="req">*</span></label>
-                <input type="text" id="cliente" value="Distribuidora BioAndes S.A.C." placeholder="Nombre del cliente" required>
+                <input type="text" id="cliente" value="Distribuidora BioAndes S.A.C." placeholder="Nombre o autocompletado por DNI" required>
               </div>
               <div class="form-group flex-1">
                 <label for="metodoPago">Método de Pago <span class="req">*</span></label>
@@ -666,7 +673,61 @@
       </main>
     </div>
 
-  </div> <!-- /modules-container -->
+  <!-- MODAL DE TICKET TÉRMICO POS (80mm) -->
+  <div class="modal-backdrop" id="ticketModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Vista Previa de Comprobante POS</h3>
+        <button type="button" class="modal-close" id="btnCloseTicketModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="thermal-ticket">
+          <div class="ticket-center">
+            <div class="company-name">AGRO PERUVIAN FOODS S.A.C.</div>
+            <div class="company-info">RUC: 20608974512</div>
+            <div class="company-info">Av. Manuel Prado 1050, Lurigancho - Lima</div>
+            <div class="separator">================================</div>
+            <div class="ticket-doc-type">TICKET ELECTRÓNICO</div>
+            <div class="ticket-number" id="tktNumero">TKT-0000000000</div>
+            <div class="separator">--------------------------------</div>
+          </div>
+          <div class="ticket-meta">
+            <p><strong>FECHA:</strong> <span id="tktFecha">--/--/---- --:--</span></p>
+            <p><strong>CLIENTE:</strong> <span id="tktCliente">Cliente General</span></p>
+            <p><strong>MÉTODO PAGO:</strong> <span id="tktPago">EFECTIVO</span></p>
+            <p><strong>ESTADO:</strong> <span id="tktEstado">REGISTRADA</span></p>
+          </div>
+          <div class="separator">--------------------------------</div>
+          <table class="ticket-table">
+            <thead>
+              <tr>
+                <th>DESCRIPCIÓN</th>
+                <th class="num">P.UNIT</th>
+                <th class="num">TOTAL</th>
+              </tr>
+            </thead>
+            <tbody id="tktItemsBody"></tbody>
+          </table>
+          <div class="separator">--------------------------------</div>
+          <div class="ticket-totals">
+            <div class="ticket-row"><span>OP. GRAVADA:</span> <strong id="tktSubtotal">S/ 0.00</strong></div>
+            <div class="ticket-row"><span>IGV (18%):</span> <strong id="tktIgv">S/ 0.00</strong></div>
+            <div class="ticket-row grand-total"><span>TOTAL A PAGAR:</span> <strong id="tktTotal">S/ 0.00</strong></div>
+          </div>
+          <div class="separator">================================</div>
+          <div class="ticket-footer ticket-center">
+            <p>¡Gracias por su preferencia!</p>
+            <div class="qr-placeholder"><span class="qr-box">[ QR DE SEGURIDAD SUNAT ]</span></div>
+            <p class="small-text">Representación impresa autorizada para control interno</p>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="secondary-btn" id="btnCancelTicketModal">Cerrar</button>
+        <button type="button" class="primary-btn" id="btnPrintTicket">🖨️ Imprimir Ticket</button>
+      </div>
+    </div>
+  </div>
 
   <!-- TOAST NOTIFICACIÓN -->
   <div class="toast" id="toast"></div>

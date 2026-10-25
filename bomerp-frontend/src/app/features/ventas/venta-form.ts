@@ -1,5 +1,5 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
-import { CurrencyPipe, CommonModule } from '@angular/common';
+import { CurrencyPipe, CommonModule, DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Router, RouterLink } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -10,6 +10,7 @@ import { MatInputModule } from '@angular/material/input';
 import { ProductoService } from '../catalogo/producto/producto.service';
 import { Producto } from '../catalogo/producto/producto.model';
 import { VentaService } from './venta.service';
+import { VentaResponse, DetalleVentaResponse } from './venta.model';
 
 @Component({
   selector: 'app-venta-form',
@@ -34,6 +35,12 @@ export class VentaForm implements OnInit {
   protected readonly productos = signal<Producto[]>([]);
   protected readonly error = signal<string | null>(null);
   protected readonly loading = signal(false);
+  protected readonly buscandoDni = signal(false);
+
+  // Estados para la previsualización del ticket térmico
+  protected readonly ventaGenerada = signal<VentaResponse | null>(null);
+  protected readonly mostrarModalTicket = signal(false);
+  protected readonly esBorrador = signal(false);
 
   protected readonly form = this.fb.nonNullable.group({
     clienteNombre: ['Mercado Mayorista de Frutas Lima', [Validators.maxLength(100)]],
@@ -82,6 +89,27 @@ export class VentaForm implements OnInit {
     });
   }
 
+  protected buscarPorDni(dni: string): void {
+    const limpio = dni ? dni.trim() : '';
+    if (!/^[0-9]{8}$/.test(limpio)) {
+      this.error.set('El DNI debe contener exactamente 8 dígitos numéricos.');
+      return;
+    }
+    this.buscandoDni.set(true);
+    this.error.set(null);
+    this.ventaService.consultarDni(limpio).subscribe({
+      next: (datos) => {
+        this.buscandoDni.set(false);
+        const nombre = datos.nombreCompleto || `${datos.nombres ?? ''} ${datos.apellidoPaterno ?? ''} ${datos.apellidoMaterno ?? ''}`.trim();
+        this.form.controls.clienteNombre.setValue(nombre);
+      },
+      error: (err) => {
+        this.buscandoDni.set(false);
+        this.error.set(err.error?.message ?? 'No se pudo consultar el DNI ingresado.');
+      },
+    });
+  }
+
   private crearLinea() {
     return this.fb.nonNullable.group({
       productoId: [0, [Validators.min(1)]],
@@ -106,6 +134,48 @@ export class VentaForm implements OnInit {
       productoId: producto.id,
       busqueda: producto.nombre,
     });
+  }
+
+  protected previsualizarBorrador(): void {
+    const lineas = this.lineasForm.getRawValue();
+    const itemsValidos = lineas.filter((l) => l.productoId > 0 && l.cantidad > 0);
+
+    if (itemsValidos.length === 0) {
+      this.error.set('Selecciona al menos un producto válido para previsualizar el ticket.');
+      return;
+    }
+
+    const detalles: DetalleVentaResponse[] = itemsValidos.map((l) => {
+      const prod = this.productos().find((p) => p.id === l.productoId);
+      const precio = prod?.precio ?? 0;
+      return {
+        productoId: l.productoId,
+        nombreProducto: prod?.nombre ?? `Producto #${l.productoId}`,
+        precioUnitario: precio,
+        cantidad: l.cantidad,
+        subtotal: precio * l.cantidad,
+      };
+    });
+
+    const tot = this.total();
+    const igv = Math.round(tot * 0.18 * 100) / 100;
+    const sub = Math.round((tot - igv) * 100) / 100;
+
+    this.ventaGenerada.set({
+      id: 0,
+      numeroTicket: 'TKT-VISTA-PREVIA',
+      fecha: new Date().toISOString(),
+      estado: 'BORRADOR',
+      clienteNombre: this.form.controls.clienteNombre.value || 'Cliente General',
+      metodoPago: this.form.controls.metodoPago.value,
+      subtotal: sub,
+      igv: igv,
+      total: tot,
+      detalles,
+    });
+
+    this.esBorrador.set(true);
+    this.mostrarModalTicket.set(true);
   }
 
   protected confirmarYGuardar(): void {
@@ -134,9 +204,44 @@ export class VentaForm implements OnInit {
         detalles,
       })
       .subscribe({
-        next: () => this.router.navigate(['/ventas/reporte']),
+        next: (ventaCreada) => {
+          this.loading.set(false);
+          this.ventaGenerada.set(ventaCreada);
+          this.esBorrador.set(false);
+          this.mostrarModalTicket.set(true);
+        },
         error: (err: HttpErrorResponse) => this.manejarErrorGuardado(err),
       });
+  }
+
+  protected imprimirTicket(): void {
+    window.print();
+  }
+
+  protected cerrarModalTicket(): void {
+    const eraBorrador = this.esBorrador();
+    this.mostrarModalTicket.set(false);
+    this.ventaGenerada.set(null);
+    if (!eraBorrador) {
+      this.nuevaVenta();
+    }
+  }
+
+  protected nuevaVenta(): void {
+    this.mostrarModalTicket.set(false);
+    this.ventaGenerada.set(null);
+    this.form.reset({
+      clienteNombre: 'Cliente General',
+      metodoPago: 'EFECTIVO',
+    });
+    this.lineasForm.clear();
+    this.agregarLinea();
+    this.error.set(null);
+  }
+
+  protected irAReporte(): void {
+    this.mostrarModalTicket.set(false);
+    this.router.navigate(['/ventas/reporte']);
   }
 
   private manejarErrorGuardado(err: HttpErrorResponse): void {
@@ -154,3 +259,4 @@ export class VentaForm implements OnInit {
     this.loading.set(false);
   }
 }
+

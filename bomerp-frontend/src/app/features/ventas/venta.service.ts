@@ -10,6 +10,12 @@ export class VentaService {
   private readonly api = inject(ApiService);
   private readonly resource = '/api/v1/ventas';
 
+  consultarDni(dni: string): Observable<{ dni: string; nombres: string; apellidoPaterno: string; apellidoMaterno: string; nombreCompleto: string }> {
+    return this.http.get<{ dni: string; nombres: string; apellidoPaterno: string; apellidoMaterno: string; nombreCompleto: string }>(
+      this.api.buildUrl(`/api/v1/personas/dni/${dni}`),
+    );
+  }
+
   crear(venta: VentaRequest): Observable<VentaResponse> {
     return this.http.post<VentaResponse>(this.api.buildUrl(this.resource), venta);
   }
