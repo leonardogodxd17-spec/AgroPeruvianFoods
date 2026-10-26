@@ -27,7 +27,7 @@ export const routes: Routes = [
       // --- Finanzas: Transacciones, Rendiciones, Sesiones y Créditos (Brandon Ccalla) ---
       {
         path: 'finanzas/transacciones',
-        canActivate: [authGuard],
+        canActivate: [authGuard, rolGuard('ADMIN', 'SUPERVISOR')],
         loadComponent: () =>
           import('./features/finanzas/transaccion-financiera/transaccion-financiera-list').then(
             (m) => m.TransaccionFinancieraList
@@ -36,7 +36,7 @@ export const routes: Routes = [
       },
       {
         path: 'finanzas/transacciones/nueva',
-        canActivate: [authGuard, rolGuard('ADMIN', 'ADMIN_FINANZAS', 'SUPERVISOR')],
+        canActivate: [authGuard, rolGuard('ADMIN', 'SUPERVISOR')],
         loadComponent: () =>
           import('./features/finanzas/transaccion-financiera/transaccion-financiera-form').then(
             (m) => m.TransaccionFinancieraForm
@@ -45,7 +45,7 @@ export const routes: Routes = [
       },
       {
         path: 'finanzas/transacciones/:id/editar',
-        canActivate: [authGuard, rolGuard('ADMIN', 'ADMIN_FINANZAS', 'SUPERVISOR')],
+        canActivate: [authGuard, rolGuard('ADMIN', 'SUPERVISOR')],
         loadComponent: () =>
           import('./features/finanzas/transaccion-financiera/transaccion-financiera-form').then(
             (m) => m.TransaccionFinancieraForm
@@ -54,7 +54,7 @@ export const routes: Routes = [
       },
       {
         path: 'finanzas/categorias',
-        canActivate: [authGuard],
+        canActivate: [authGuard, rolGuard('ADMIN', 'SUPERVISOR')],
         loadComponent: () =>
           import('./features/finanzas/categoria-financiera/categoria-financiera-list').then(
             (m) => m.CategoriaFinancieraList
@@ -63,7 +63,7 @@ export const routes: Routes = [
       },
       {
         path: 'finanzas/categorias/nueva',
-        canActivate: [authGuard, rolGuard('ADMIN', 'ADMIN_FINANZAS', 'SUPERVISOR')],
+        canActivate: [authGuard, rolGuard('ADMIN', 'SUPERVISOR')],
         loadComponent: () =>
           import('./features/finanzas/categoria-financiera/categoria-financiera-form').then(
             (m) => m.CategoriaFinancieraForm
@@ -72,7 +72,7 @@ export const routes: Routes = [
       },
       {
         path: 'finanzas/categorias/:id/editar',
-        canActivate: [authGuard, rolGuard('ADMIN', 'ADMIN_FINANZAS', 'SUPERVISOR')],
+        canActivate: [authGuard, rolGuard('ADMIN', 'SUPERVISOR')],
         loadComponent: () =>
           import('./features/finanzas/categoria-financiera/categoria-financiera-form').then(
             (m) => m.CategoriaFinancieraForm
@@ -81,7 +81,7 @@ export const routes: Routes = [
       },
       {
         path: 'finanzas/rendiciones',
-        canActivate: [authGuard],
+        canActivate: [authGuard, rolGuard('ADMIN', 'SUPERVISOR')],
         loadComponent: () =>
           import('./features/finanzas/rendicion-caja-chica/rendicion-caja-chica-list').then(
             (m) => m.RendicionCajaChicaList
@@ -90,7 +90,7 @@ export const routes: Routes = [
       },
       {
         path: 'finanzas/rendiciones/nueva',
-        canActivate: [authGuard, rolGuard('ADMIN', 'ADMIN_FINANZAS', 'SUPERVISOR', 'CAJERO')],
+        canActivate: [authGuard, rolGuard('ADMIN', 'SUPERVISOR')],
         loadComponent: () =>
           import('./features/finanzas/rendicion-caja-chica/rendicion-caja-chica-form').then(
             (m) => m.RendicionCajaChicaForm
@@ -99,28 +99,28 @@ export const routes: Routes = [
       },
       {
         path: 'finanzas/sesiones',
-        canActivate: [authGuard],
+        canActivate: [authGuard, rolGuard('ADMIN', 'SUPERVISOR')],
         loadComponent: () =>
           import('./features/finanzas/sesion-caja/sesion-caja-list').then((m) => m.SesionCajaList),
         title: 'Sesiones de Caja Diaria · ERP Agro Peruvian Foods',
       },
       {
         path: 'finanzas/sesiones/nueva',
-        canActivate: [authGuard, rolGuard('ADMIN', 'ADMIN_FINANZAS', 'SUPERVISOR', 'CAJERO')],
+        canActivate: [authGuard, rolGuard('ADMIN', 'SUPERVISOR')],
         loadComponent: () =>
           import('./features/finanzas/sesion-caja/sesion-caja-form').then((m) => m.SesionCajaForm),
         title: 'Apertura de Caja · ERP Agro Peruvian Foods',
       },
       {
         path: 'finanzas/sesiones/:id',
-        canActivate: [authGuard, rolGuard('ADMIN', 'ADMIN_FINANZAS', 'SUPERVISOR', 'CAJERO')],
+        canActivate: [authGuard, rolGuard('ADMIN', 'SUPERVISOR')],
         loadComponent: () =>
           import('./features/finanzas/sesion-caja/sesion-caja-form').then((m) => m.SesionCajaForm),
         title: 'Detalle de Sesión de Caja · ERP Agro Peruvian Foods',
       },
       {
         path: 'finanzas/creditos',
-        canActivate: [authGuard],
+        canActivate: [authGuard, rolGuard('ADMIN', 'SUPERVISOR')],
         loadComponent: () =>
           import('./features/finanzas/cuenta-cobrar/cuenta-cobrar-list').then(
             (m) => m.CuentaCobrarList
@@ -129,7 +129,7 @@ export const routes: Routes = [
       },
       {
         path: 'finanzas/creditos/nuevo',
-        canActivate: [authGuard, rolGuard('ADMIN', 'ADMIN_FINANZAS', 'CAJERO')],
+        canActivate: [authGuard, rolGuard('ADMIN', 'SUPERVISOR')],
         loadComponent: () =>
           import('./features/finanzas/cuenta-cobrar/cuenta-cobrar-form').then(
             (m) => m.CuentaCobrarForm
@@ -138,7 +138,7 @@ export const routes: Routes = [
       },
       {
         path: 'finanzas/reportes',
-        canActivate: [authGuard],
+        canActivate: [authGuard, rolGuard('ADMIN', 'SUPERVISOR')],
         loadComponent: () =>
           import('./features/finanzas/reporte-financiero/reporte-financiero-list').then(
             (m) => m.ReporteFinancieroList

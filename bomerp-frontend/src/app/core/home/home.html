@@ -50,8 +50,15 @@
         <strong>Líder:</strong> Brandon Andree Ccalla Colquehuanca
       </div>
       <div class="module-actions">
-        <a routerLink="/finanzas/sesiones" class="btn btn-primary btn-sm">Sesiones de Caja</a>
-        <a routerLink="/finanzas/rendiciones" class="btn btn-secondary btn-sm">Rendiciones</a>
+        @if (auth.tieneRol('ADMIN', 'SUPERVISOR')) {
+          <a routerLink="/finanzas/sesiones" class="btn btn-primary btn-sm">Sesiones de Caja</a>
+          <a routerLink="/finanzas/rendiciones" class="btn btn-secondary btn-sm">Rendiciones</a>
+        } @else {
+          <span style="font-size: 0.8rem; color: #64748b; font-style: italic;">
+            <span class="material-symbols-outlined icon-inline" style="font-size: 0.9rem;">lock</span>
+            Acceso exclusivo para Admin y Supervisor
+          </span>
+        }
       </div>
     </div>
 

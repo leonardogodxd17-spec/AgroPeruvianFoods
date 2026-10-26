@@ -2,6 +2,7 @@ import { Component, inject, signal, OnInit } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ApiService } from '../services/api.service';
 import { HttpClient } from '@angular/common/http';
+import { AuthService } from '../auth/auth-service';
 
 @Component({
   selector: 'app-home',
@@ -10,6 +11,7 @@ import { HttpClient } from '@angular/common/http';
   styleUrl: './home.css',
 })
 export class Home implements OnInit {
+  protected readonly auth = inject(AuthService);
   private readonly api = inject(ApiService);
   private readonly http = inject(HttpClient);
 
