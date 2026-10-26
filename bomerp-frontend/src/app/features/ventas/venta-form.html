@@ -8,6 +8,16 @@
       </p>
     </div>
     <div class="header-actions">
+      <a
+        href="/codigos-barras.html"
+        target="_blank"
+        class="btn btn-secondary"
+        style="display: inline-flex; align-items: center; gap: 0.4rem;"
+        title="Abrir hoja de códigos de barras y QR para escanear"
+      >
+        <span class="material-symbols-outlined" style="font-size: 1.15rem; color: #0284c7;">qr_code_2</span>
+        Ver Códigos de Barra
+      </a>
       <button
         type="button"
         class="btn btn-primary"
@@ -437,10 +447,20 @@
 
           <!-- Simulación Rápida de Prueba para Sustentación -->
           <div class="scanner-demo-box">
-            <span class="demo-box-title">
-              <span class="material-symbols-outlined icon-inline" style="font-size: 0.9rem;">touch_app</span>
-              Simulación de escaneo rápido (sin código físico):
-            </span>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.5rem;">
+              <span class="demo-box-title" style="margin: 0;">
+                <span class="material-symbols-outlined icon-inline" style="font-size: 0.9rem;">touch_app</span>
+                Simulación rápida o escanear hoja:
+              </span>
+              <a
+                href="/codigos-barras.html"
+                target="_blank"
+                style="font-size: 0.8rem; color: #0284c7; text-decoration: underline; font-weight: 600; display: inline-flex; align-items: center; gap: 0.25rem;"
+              >
+                <span class="material-symbols-outlined" style="font-size: 0.95rem;">open_in_new</span>
+                Abrir Catálogo de Códigos
+              </a>
+            </div>
             <div class="demo-buttons-grid">
               <button type="button" class="btn-demo-item" (click)="simularEscaneo(1)">
                 Aceite Coco 4L (ID 1)

@@ -359,19 +359,45 @@ export class VentaForm implements OnInit, OnDestroy {
 
     // Estrategia de Búsqueda de Producto:
     // 1. Coincidencia exacta por ID de catálogo (ej. "1", "5", "13")
-    // 2. Extracción de ID numérico si viene con formato EAN/SKU (ej. "7750000000010" o "PROD-5")
-    // 3. Coincidencia parcial por nombre del producto
     const lista = this.productos();
     let producto = lista.find((p) => p.id === Number(codigo));
 
+    // 2. Coincidencia de código EAN-13 oficial de AgroPeruvianFoods (ej. "7751000000018")
+    if (!producto && /^7751\d{8}\d$/.test(codigo)) {
+      const idCalculado = parseInt(codigo.substring(4, 12), 10);
+      producto = lista.find((p) => p.id === idCalculado);
+    }
+
+    // 3. Coincidencia con prefijos SKU / PROD / ID (ej. "PROD-5", "ID: 3", "#12")
     if (!producto) {
-      const matchNum = codigo.match(/\d+/);
-      if (matchNum) {
-        const idExtraido = parseInt(matchNum[0], 10);
+      const matchPrefijo = codigo.match(/(?:PROD|ID|SKU|#)[-:\s]*(\d+)/i);
+      if (matchPrefijo) {
+        const idExtraido = parseInt(matchPrefijo[1], 10);
         producto = lista.find((p) => p.id === idExtraido);
       }
     }
 
+    // 4. Extracción de número simple si es menor a 1000
+    if (!producto) {
+      const num = parseInt(codigo, 10);
+      if (!isNaN(num) && num > 0 && num <= 1000) {
+        producto = lista.find((p) => p.id === num);
+      }
+    }
+
+    // 5. Coincidencia por JSON en QR (ej. {"id": 1})
+    if (!producto && codigo.startsWith('{') && codigo.endsWith('}')) {
+      try {
+        const obj = JSON.parse(codigo);
+        if (obj && obj.id) {
+          producto = lista.find((p) => p.id === Number(obj.id));
+        }
+      } catch {
+        // no-op
+      }
+    }
+
+    // 6. Coincidencia parcial por nombre del producto
     if (!producto) {
       const codLower = codigo.toLowerCase();
       producto = lista.find((p) => p.nombre.toLowerCase().includes(codLower));
