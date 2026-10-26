@@ -126,23 +126,13 @@
     <!-- Top Header -->
     <header class="topbar">
       <div class="topbar-left">
-        <span class="session-badge">S11 · Keycloak PKCE</span>
-        <span class="status-indicator">
-          <span class="pulse-dot"></span>
-          Keycloak 26: 38080 (bomerp)
-        </span>
-      </div>
-
-      <div class="topbar-right">
-        <div class="trace-box" title="Interceptor HTTP activo: genera UUID único por petición">
-          <span class="trace-label">X-Trace-ID:</span>
-          <code>{{ activeTraceId() | slice:0:13 }}...</code>
-        </div>
-
         <div class="clock-box">
           <span class="material-symbols-outlined icon-inline" style="font-size: 1.05rem;">schedule</span>
           {{ currentDateTime() | date:'dd/MM/yyyy HH:mm:ss' }}
         </div>
+      </div>
+
+      <div class="topbar-right">
 
         @if (auth.autenticado()) {
           <div class="user-profile" title="Sesión activa Keycloak">
