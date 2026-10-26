@@ -8,6 +8,16 @@
       </p>
     </div>
     <div class="header-actions">
+      <button
+        type="button"
+        class="btn btn-primary"
+        (click)="abrirEscanerCamara()"
+        style="display: inline-flex; align-items: center; gap: 0.4rem; background: #0284c7; border: 1px solid #0369a1;"
+        title="Abrir cámara de laptop o celular para leer códigos de barra"
+      >
+        <span class="material-symbols-outlined" style="font-size: 1.15rem;">barcode_scanner</span>
+        Escanear Código (Cámara)
+      </button>
       <a routerLink="/ventas/reporte" class="btn btn-secondary">
         <span class="material-symbols-outlined icon-inline">bar_chart</span>
         Ir a Reporte de Ventas
@@ -172,10 +182,20 @@
         </table>
       </div>
 
-      <div class="acciones-lineas">
+      <div class="acciones-lineas" style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
         <button type="button" class="btn btn-secondary" (click)="agregarLinea()">
           <span class="material-symbols-outlined icon-inline" style="font-size: 1.1rem;">add</span>
           Agregar otra línea
+        </button>
+        <button
+          type="button"
+          class="btn btn-secondary"
+          (click)="abrirEscanerCamara()"
+          style="display: inline-flex; align-items: center; gap: 0.4rem; border-color: #0284c7; color: #0284c7; background: #f0f9ff;"
+          title="Escanear producto con cámara web o móvil"
+        >
+          <span class="material-symbols-outlined" style="font-size: 1.15rem;">barcode_scanner</span>
+          Escanear Código de Barras (Cámara)
         </button>
       </div>
     </div>
@@ -329,6 +349,137 @@
               Ver en Reporte
             </button>
           }
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Modal de Escáner de Código de Barras por Cámara (Laptop / Celular) -->
+  @if (mostrarModalEscaner()) {
+    <div class="modal-backdrop scanner-backdrop" (click)="cerrarEscanerCamara()">
+      <div class="modal-scanner-card" (click)="$event.stopPropagation()">
+        <div class="scanner-header">
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <span class="material-symbols-outlined" style="font-size: 1.6rem; color: #0284c7;">barcode_scanner</span>
+            <div>
+              <h3 style="margin: 0; font-size: 1.15rem;">Lector de Código de Barras POS</h3>
+              <p style="margin: 0; font-size: 0.8rem; color: #64748b;">Compatible con cámara web de laptop y smartphone</p>
+            </div>
+          </div>
+          <button type="button" class="btn-close-scanner" (click)="cerrarEscanerCamara()" aria-label="Cerrar">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+
+        <div class="scanner-body">
+          <!-- Visor de la Cámara con Overlay de Escaneo -->
+          <div class="scanner-viewport">
+            <video #videoScanner autoplay playsinline muted class="scanner-video"></video>
+
+            <!-- Guía de Enfoque y Láser Animado -->
+            <div class="scanner-overlay-guide">
+              <div class="scanner-corner top-left"></div>
+              <div class="scanner-corner top-right"></div>
+              <div class="scanner-corner bottom-left"></div>
+              <div class="scanner-corner bottom-right"></div>
+              <div class="scanner-laser"></div>
+            </div>
+
+            @if (errorCamara()) {
+              <div class="scanner-camera-error">
+                <span class="material-symbols-outlined" style="font-size: 2.5rem; color: #ef4444;">videocam_off</span>
+                <p>{{ errorCamara() }}</p>
+                <small>Verifica los permisos de cámara en tu navegador o selecciona otra cámara.</small>
+              </div>
+            }
+          </div>
+
+          <!-- Selector de Cámara (Laptop o Móvil) -->
+          @if (camarasDisponibles().length > 1) {
+            <div class="scanner-camera-selector">
+              <label for="selectCamara" class="camera-label">
+                <span class="material-symbols-outlined icon-inline" style="font-size: 1rem;">photo_camera</span>
+                Cambiar de cámara:
+              </label>
+              <select
+                id="selectCamara"
+                #camSelect
+                [value]="camaraSeleccionadaId()"
+                (change)="cambiarCamara(camSelect.value)"
+                class="form-control"
+                style="padding: 0.35rem 0.6rem; font-size: 0.85rem;"
+              >
+                @for (cam of camarasDisponibles(); track cam.deviceId) {
+                  <option [value]="cam.deviceId">{{ cam.label || 'Cámara #' + ($index + 1) }}</option>
+                }
+              </select>
+            </div>
+          }
+
+          <!-- Mensaje de Feedback de Escaneo -->
+          @if (mensajeEscaneo(); as msg) {
+            <div
+              class="scanner-feedback"
+              [class.feedback-success]="msg.exito"
+              [class.feedback-warning]="!msg.exito"
+            >
+              <span class="material-symbols-outlined" style="font-size: 1.25rem;">
+                {{ msg.exito ? 'check_circle' : 'help' }}
+              </span>
+              <span>{{ msg.texto }}</span>
+            </div>
+          } @else {
+            <div class="scanner-instruction">
+              <span class="material-symbols-outlined" style="font-size: 1.1rem; color: #0284c7;">center_focus_strong</span>
+              <span>Apunte el código de barras o código QR hacia el recuadro central</span>
+            </div>
+          }
+
+          <!-- Simulación Rápida de Prueba para Sustentación -->
+          <div class="scanner-demo-box">
+            <span class="demo-box-title">
+              <span class="material-symbols-outlined icon-inline" style="font-size: 0.9rem;">touch_app</span>
+              Simulación de escaneo rápido (sin código físico):
+            </span>
+            <div class="demo-buttons-grid">
+              <button type="button" class="btn-demo-item" (click)="simularEscaneo(1)">
+                Aceite Coco 4L (ID 1)
+              </button>
+              <button type="button" class="btn-demo-item" (click)="simularEscaneo(5)">
+                Coco Rallado (ID 5)
+              </button>
+              <button type="button" class="btn-demo-item" (click)="simularEscaneo(13)">
+                Aceite 460ml (ID 13)
+              </button>
+            </div>
+            <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+              <input
+                #manualCodeInput
+                type="text"
+                placeholder="O escribe ID / código manual (ej. 1, 5, PROD-13)..."
+                class="form-control"
+                style="padding: 0.35rem 0.6rem; font-size: 0.8rem;"
+                (keydown.enter)="$event.preventDefault(); procesarCodigoEscaneado(manualCodeInput.value); manualCodeInput.value = ''"
+              />
+              <button
+                type="button"
+                class="btn btn-secondary btn-sm"
+                (click)="procesarCodigoEscaneado(manualCodeInput.value); manualCodeInput.value = ''"
+              >
+                Probar
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="scanner-footer">
+          <span style="font-size: 0.85rem; color: #64748b;">
+            Líneas actuales: <strong>{{ lineasForm.length }}</strong> &bull; Total: <strong>{{ total() | currency: 'PEN' : 'S/ ' }}</strong>
+          </span>
+          <button type="button" class="btn btn-primary" (click)="cerrarEscanerCamara()">
+            <span class="material-symbols-outlined icon-inline" style="font-size: 1rem;">done</span>
+            Finalizar y Volver al Ticket
+          </button>
         </div>
       </div>
     </div>

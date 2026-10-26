@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, OnDestroy, computed, inject, signal, ViewChild, ElementRef } from '@angular/core';
 import { CurrencyPipe, CommonModule, DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Router, RouterLink } from '@angular/router';
@@ -7,6 +7,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { BrowserMultiFormatReader, IScannerControls } from '@zxing/browser';
 import { ProductoService } from '../catalogo/producto/producto.service';
 import { Producto } from '../catalogo/producto/producto.model';
 import { VentaService } from './venta.service';
@@ -26,16 +27,31 @@ import { VentaResponse, DetalleVentaResponse } from './venta.model';
   templateUrl: './venta-form.html',
   styleUrl: './venta-form.css',
 })
-export class VentaForm implements OnInit {
+export class VentaForm implements OnInit, OnDestroy {
   private readonly fb = inject(FormBuilder);
   private readonly productoService = inject(ProductoService);
   private readonly ventaService = inject(VentaService);
   private readonly router = inject(Router);
 
+  @ViewChild('videoScanner') videoScannerRef?: ElementRef<HTMLVideoElement>;
+  private codeReader: BrowserMultiFormatReader | null = null;
+  private scannerControls: IScannerControls | null = null;
+  private ultimoCodigoTiempo = 0;
+  private ultimoCodigoValor = '';
+
   protected readonly productos = signal<Producto[]>([]);
   protected readonly error = signal<string | null>(null);
   protected readonly loading = signal(false);
   protected readonly buscandoDni = signal(false);
+
+  // Estados para el escáner de código de barras por cámara
+  protected readonly mostrarModalEscaner = signal(false);
+  protected readonly camarasDisponibles = signal<MediaDeviceInfo[]>([]);
+  protected readonly camaraSeleccionadaId = signal<string>('');
+  protected readonly escaneando = signal(false);
+  protected readonly errorCamara = signal<string | null>(null);
+  protected readonly ultimoEscaneado = signal<string | null>(null);
+  protected readonly mensajeEscaneo = signal<{ texto: string; exito: boolean } | null>(null);
 
   // Estados para la previsualización del ticket térmico
   protected readonly ventaGenerada = signal<VentaResponse | null>(null);
@@ -242,6 +258,200 @@ export class VentaForm implements OnInit {
   protected irAReporte(): void {
     this.mostrarModalTicket.set(false);
     this.router.navigate(['/ventas/reporte']);
+  }
+
+  ngOnDestroy(): void {
+    this.detenerEscaner();
+  }
+
+  // =========================================================================
+  // FUNCIONALIDAD DE ESCÁNER DE CÓDIGO DE BARRAS (CÁMARA LAPTOP / CELULAR)
+  // =========================================================================
+  protected async abrirEscanerCamara(): Promise<void> {
+    this.mostrarModalEscaner.set(true);
+    this.errorCamara.set(null);
+    this.mensajeEscaneo.set(null);
+    this.escaneando.set(true);
+
+    try {
+      if (!this.codeReader) {
+        this.codeReader = new BrowserMultiFormatReader();
+      }
+
+      // Enumerar cámaras físicas disponibles (Webcam laptop / cámaras móvil)
+      const devices = await BrowserMultiFormatReader.listVideoInputDevices();
+      this.camarasDisponibles.set(devices);
+
+      if (devices.length === 0) {
+        this.errorCamara.set('No se detectó ninguna cámara en este equipo (laptop o móvil).');
+        this.escaneando.set(false);
+        return;
+      }
+
+      // Si hay cámara trasera (celular), priorizarla; si es laptop, usar la primera (webcam integrada)
+      const camaraTrasera = devices.find((d) => /back|rear|trasera|environment/i.test(d.label));
+      const deviceId = camaraTrasera ? camaraTrasera.deviceId : devices[0].deviceId;
+      this.camaraSeleccionadaId.set(deviceId);
+
+      // Esperar un ciclo para que el elemento <video> esté en el DOM del modal
+      setTimeout(() => this.iniciarCaptura(deviceId), 150);
+    } catch (err: unknown) {
+      console.error('Error al inicializar cámara:', err);
+      this.errorCamara.set('Permiso de cámara no otorgado o navegador sin soporte de medios.');
+      this.escaneando.set(false);
+    }
+  }
+
+  protected async cambiarCamara(deviceId: string): Promise<void> {
+    this.camaraSeleccionadaId.set(deviceId);
+    this.detenerEscaner();
+    this.iniciarCaptura(deviceId);
+  }
+
+  private async iniciarCaptura(deviceId: string): Promise<void> {
+    if (!this.videoScannerRef?.nativeElement || !this.codeReader) return;
+
+    try {
+      this.detenerEscaner();
+      this.scannerControls = await this.codeReader.decodeFromVideoDevice(
+        deviceId,
+        this.videoScannerRef.nativeElement,
+        (result) => {
+          if (result) {
+            this.procesarCodigoEscaneado(result.getText());
+          }
+        },
+      );
+      this.escaneando.set(true);
+    } catch (err: unknown) {
+      console.error('Error al iniciar stream de video:', err);
+      this.errorCamara.set('No se pudo acceder a la transmisión de video de la cámara seleccionada.');
+      this.escaneando.set(false);
+    }
+  }
+
+  protected detenerEscaner(): void {
+    if (this.scannerControls) {
+      this.scannerControls.stop();
+      this.scannerControls = null;
+    }
+    this.escaneando.set(false);
+  }
+
+  protected cerrarEscanerCamara(): void {
+    this.detenerEscaner();
+    this.mostrarModalEscaner.set(false);
+    this.mensajeEscaneo.set(null);
+  }
+
+  protected procesarCodigoEscaneado(codigoRaw: string): void {
+    const ahora = Date.now();
+    const codigo = (codigoRaw || '').trim();
+    if (!codigo) return;
+
+    // Debouncing: evitar escaneos continuos en ráfaga del mismo código en menos de 1.8 segundos
+    if (codigo === this.ultimoCodigoValor && ahora - this.ultimoCodigoTiempo < 1800) {
+      return;
+    }
+    this.ultimoCodigoTiempo = ahora;
+    this.ultimoCodigoValor = codigo;
+    this.ultimoEscaneado.set(codigo);
+
+    // Estrategia de Búsqueda de Producto:
+    // 1. Coincidencia exacta por ID de catálogo (ej. "1", "5", "13")
+    // 2. Extracción de ID numérico si viene con formato EAN/SKU (ej. "7750000000010" o "PROD-5")
+    // 3. Coincidencia parcial por nombre del producto
+    const lista = this.productos();
+    let producto = lista.find((p) => p.id === Number(codigo));
+
+    if (!producto) {
+      const matchNum = codigo.match(/\d+/);
+      if (matchNum) {
+        const idExtraido = parseInt(matchNum[0], 10);
+        producto = lista.find((p) => p.id === idExtraido);
+      }
+    }
+
+    if (!producto) {
+      const codLower = codigo.toLowerCase();
+      producto = lista.find((p) => p.nombre.toLowerCase().includes(codLower));
+    }
+
+    if (producto) {
+      this.emitirBeepPos();
+      this.agregarProductoAlCarrito(producto);
+      this.mensajeEscaneo.set({
+        texto: `¡Escaneado con éxito! "${producto.nombre}" agregado (+1 un. · S/ ${producto.precio.toFixed(2)})`,
+        exito: true,
+      });
+    } else {
+      this.mensajeEscaneo.set({
+        texto: `Código leído: "${codigo}", pero no coincide con ningún producto del catálogo.`,
+        exito: false,
+      });
+    }
+  }
+
+  private agregarProductoAlCarrito(producto: Producto): void {
+    // Buscar si ya existe una línea con este producto
+    const indiceExistente = this.lineasForm.controls.findIndex(
+      (l) => l.controls.productoId.value === producto.id,
+    );
+
+    if (indiceExistente >= 0) {
+      // Incrementar cantidad +1 en la línea existente
+      const linea = this.lineasForm.at(indiceExistente);
+      const cantActual = linea.controls.cantidad.value || 0;
+      linea.controls.cantidad.setValue(cantActual + 1);
+      linea.controls.cantidad.markAsDirty();
+    } else {
+      // Si la primera línea está sin asignar (productoId = 0), reutilizarla
+      const primeraLinea = this.lineasForm.at(0);
+      if (
+        this.lineasForm.length === 1 &&
+        (!primeraLinea.controls.productoId.value || primeraLinea.controls.productoId.value === 0)
+      ) {
+        primeraLinea.patchValue({
+          productoId: producto.id,
+          busqueda: producto.nombre,
+          cantidad: 1,
+        });
+      } else {
+        // Agregar nueva fila al FormArray
+        const nuevaLinea = this.fb.nonNullable.group({
+          productoId: [producto.id, [Validators.min(1)]],
+          busqueda: [producto.nombre],
+          cantidad: [1, [Validators.required, Validators.min(1)]],
+        });
+        this.lineasForm.push(nuevaLinea);
+      }
+    }
+  }
+
+  protected simularEscaneo(productoId: number): void {
+    this.procesarCodigoEscaneado(productoId.toString());
+  }
+
+  private emitirBeepPos(): void {
+    try {
+      const AudioCtx =
+        window.AudioContext ||
+        (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(1760, ctx.currentTime); // 1760 Hz (Tono agudo de caja registradora)
+      gain.gain.setValueAtTime(0.25, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.12);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.12);
+    } catch {
+      // Fallback silencioso si no se permite reproducción de audio
+    }
   }
 
   private manejarErrorGuardado(err: HttpErrorResponse): void {

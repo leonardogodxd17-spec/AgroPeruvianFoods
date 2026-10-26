@@ -43,7 +43,7 @@ services:
     image: quay.io/keycloak/keycloak:26.8.0
     container_name: bomerp-keycloak
     restart: unless-stopped
-    command: start-dev
+    command: start-dev --import-realm
     depends_on:
       keycloak-db:
         condition: service_healthy
@@ -57,7 +57,7 @@ services:
       KC_DB_USERNAME: bomerp_keycloak
       KC_DB_PASSWORD: 123456
     volumes:
-      - keycloak-data:/opt/keycloak/data
+      - ./agroperuvianfoods-realm.json:/opt/keycloak/data/import/agroperuvianfoods-realm.json:ro
 
   loki:
     image: grafana/loki:3.0.0

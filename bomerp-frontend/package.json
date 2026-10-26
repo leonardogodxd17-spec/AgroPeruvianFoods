@@ -20,6 +20,8 @@
     "@angular/platform-browser": "^22.2.0",
     "@angular/router": "^22.2.0",
     "@types/leaflet": "^1.9.22",
+    "@zxing/browser": "^0.2.1",
+    "@zxing/library": "^0.23.0",
     "chart.js": "^4.6.1",
     "leaflet": "^1.9.4",
     "rxjs": "~7.8.0",
