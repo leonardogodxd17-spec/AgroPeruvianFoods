@@ -1,0 +1,541 @@
+<div class="page-container">
+  <div class="header-section">
+    <div>
+      <div class="breadcrumb">
+        <span>Finanzas</span> / <strong>Rendiciones de Caja Chica</strong>
+      </div>
+      <h2>Reporte y Consulta Transaccional: Rendiciones</h2>
+      <p class="subtitle">Consulta de operaciones con detalle profundo, métricas agregadas y transición de estado</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-secondary" (click)="abrirModalCajaChica()">
+        + Nueva Caja Chica (Fondo Fijo)
+      </button>
+      <a routerLink="/finanzas/rendiciones/nueva" class="btn btn-primary">
+        + Nueva Rendición (Cabecera-Detalle)
+      </a>
+    </div>
+  </div>
+
+  <!-- TARJETAS DE FONDOS DISPONIBLES EN CAJAS CHICAS -->
+  <div class="cajas-chicas-banner">
+    <div class="banner-title">
+      <span>FONDOS FIJOS OPERATIVOS ASIGNADOS:</span>
+    </div>
+    <div class="cajas-chicas-chips">
+      @for (c of cajasChicas(); track c.id) {
+        <div class="caja-chip" [class.selected]="filtroCajaChicaId() === c.id" (click)="filtroCajaChicaId.set(filtroCajaChicaId() === c.id ? null : c.id); aplicarFiltros();">
+          <div class="chip-code">{{ c.codigo }}</div>
+          <div class="chip-resp">{{ c.responsable }}</div>
+          <div class="chip-balance">
+            <strong>S/ {{ c.saldoDisponible | number:'1.2-2' }}</strong>
+            <span class="chip-limit">/ S/ {{ c.limiteMaximo | number:'1.2-2' }}</span>
+          </div>
+
+          <!-- Barra de Consumo por Centro de Costo (M:N) -->
+          @if (presupuestosPorCaja()[c.id]; as asigs) {
+            @if (asigs.length > 0) {
+              <div class="chip-cc-list">
+                @for (asig of asigs; track asig.centroCostoId) {
+                  <div class="mini-progress-row" [title]="asig.nombreArea + ': S/ ' + asig.saldoDisponible + ' disponibles de S/ ' + asig.presupuestoAsignado">
+                    <div class="mini-progress-labels">
+                      <span class="mini-cc-name">{{ asig.codigoCc }}</span>
+                      <span class="mini-cc-vals">S/ {{ asig.saldoDisponible | number:'1.0-0' }}/{{ asig.presupuestoAsignado | number:'1.0-0' }}</span>
+                    </div>
+                    <div class="mini-progress-track">
+                      <div class="mini-progress-fill" [style.width.%]="(asig.saldoDisponible / asig.presupuestoAsignado) * 100" [class.low]="(asig.saldoDisponible / asig.presupuestoAsignado) < 0.2"></div>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          }
+
+          <button type="button" class="btn-manage-cc" (click)="$event.stopPropagation(); abrirGestionPresupuestos(c)">
+            <span class="material-symbols-outlined icon-inline">settings</span> Presupuestos CC (M:N)
+          </button>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- ALERTAS DE ÉXITO O ERROR -->
+  @if (mensajeExito()) {
+    <div class="alert alert-success">
+      <span class="alert-icon">[OK]</span>
+      <div>{{ mensajeExito() }}</div>
+    </div>
+  }
+
+  @if (mensajeError()) {
+    <div class="alert alert-error">
+      <span class="alert-icon">[!]</span>
+      <div>{{ mensajeError() }}</div>
+    </div>
+  }
+
+  <!-- BLOQUE 1: MÉTRICAS AGREGADAS (REPORTE DEFENSIVO DEL BACKEND) -->
+  @if (reporteAgregado(); as rep) {
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-content">
+          <span class="metric-label">Total Rendido (SUM)</span>
+          <span class="metric-value text-primary">S/ {{ rep.totalMonto | number:'1.2-2' }}</span>
+        </div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-content">
+          <span class="metric-label">Promedio por Rendición (AVG)</span>
+          <span class="metric-value">S/ {{ rep.promedioMonto | number:'1.2-2' }}</span>
+        </div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-content">
+          <span class="metric-label">Gasto Máximo (MAX)</span>
+          <span class="metric-value text-warning">S/ {{ rep.montoMaximo | number:'1.2-2' }}</span>
+        </div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-content">
+          <span class="metric-label">Total Rendiciones (COUNT)</span>
+          <span class="metric-value">{{ rep.cantidadRendiciones }} operaciones</span>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- BLOQUE 2: BARRA DE FILTROS COMBINADOS (ESTADO Y RANGO DE FECHAS) -->
+  <div class="card filter-card">
+    <div class="filter-header">
+      <h4>Filtros de Búsqueda Parametrizada</h4>
+      <span class="filter-sub">Filtro por estado, fechas y caja chica probados con datos reales</span>
+    </div>
+
+    <div class="filters-grid">
+      <div class="filter-group">
+        <label for="filtroEstado">Estado:</label>
+        <select id="filtroEstado" [ngModel]="filtroEstado()" (ngModelChange)="filtroEstado.set($event)" class="form-control">
+          <option value="">-- Todos los Estados --</option>
+          <option value="APROBADO">APROBADO</option>
+          <option value="PENDIENTE">PENDIENTE</option>
+          <option value="ANULADO">ANULADO</option>
+          <option value="RECHAZADO">RECHAZADO</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label for="filtroCaja">Caja Chica:</label>
+        <select id="filtroCaja" (change)="onCajaChicaChange($event)" class="form-control">
+          <option value="">-- Todas las Cajas --</option>
+          @for (c of cajasChicas(); track c.id) {
+            <option [value]="c.id" [selected]="filtroCajaChicaId() === c.id">
+              {{ c.codigo }} - {{ c.responsable }} (Saldo: S/ {{ c.saldoDisponible | number:'1.2-2' }})
+            </option>
+          }
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label for="fechaInicio">Fecha Desde:</label>
+        <input id="fechaInicio" type="date" [ngModel]="filtroFechaInicio()" (ngModelChange)="filtroFechaInicio.set($event)" class="form-control" />
+      </div>
+
+      <div class="filter-group">
+        <label for="fechaFin">Fecha Hasta:</label>
+        <input id="fechaFin" type="date" [ngModel]="filtroFechaFin()" (ngModelChange)="filtroFechaFin.set($event)" class="form-control" />
+      </div>
+
+      <div class="filter-actions">
+        <button type="button" class="btn btn-primary" (click)="aplicarFiltros()">
+          Aplicar Filtros
+        </button>
+        <button type="button" class="btn btn-secondary" (click)="limpiarFiltros()">
+          Limpiar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- BLOQUE 3: TABLA DE COLECCIÓN COMPLETA CON ACCIONES -->
+  <div class="card table-card">
+    <div class="card-header space-between">
+      <h3>Transacciones Registradas ({{ rendiciones().length }} encontradas)</h3>
+    </div>
+
+    @if (loading()) {
+      <div class="loading-state">Cargando rendiciones desde el backend...</div>
+    } @else {
+      <div class="table-responsive">
+        <table class="table-principal">
+          <thead>
+            <tr>
+              <th style="width: 5%;">ID</th>
+              <th style="width: 15%;">Código</th>
+              <th style="width: 12%;">Fecha</th>
+              <th style="width: 20%;">Responsable</th>
+              <th style="width: 15%;">Caja Chica</th>
+              <th style="width: 12%; text-align: right;">Total (S/)</th>
+              <th style="width: 10%; text-align: center;">Estado</th>
+              <th style="width: 11%; text-align: center;">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (r of rendiciones(); track r.id) {
+              <tr [class.fila-anulada]="r.estado === 'ANULADO'">
+                <td>#{{ r.id }}</td>
+                <td><strong>{{ r.codigo }}</strong></td>
+                <td>{{ r.fecha }}</td>
+                <td>{{ r.responsable }}</td>
+                <td>{{ getCajaNombre(r.cajaChicaId) }}</td>
+                <td style="text-align: right; font-weight: bold; color: #1e3a8a;">
+                  S/ {{ r.montoTotal | number:'1.2-2' }}
+                </td>
+                <td style="text-align: center;">
+                  <span class="badge" [ngClass]="getEstadoClass(r.estado)">
+                    {{ r.estado }}
+                  </span>
+                </td>
+                <td style="text-align: center;">
+                  <div class="btn-group">
+                    <button
+                      type="button"
+                      class="btn-action btn-view"
+                      (click)="verDetalle(r)"
+                      title="Ver detalle completo de líneas"
+                    >
+                      Detalle
+                    </button>
+
+                    <!-- TRANSICIÓN DE ESTADO (ANULAR) CONDICIONADA AL ESTADO ACTUAL -->
+                    @if (r.estado !== 'ANULADO') {
+                      <button
+                        type="button"
+                        class="btn-action btn-anular"
+                        (click)="abrirModalAnular(r)"
+                        title="Anular rendición y revertir saldo a caja chica"
+                      >
+                        Anular
+                      </button>
+                    } @else {
+                      <span class="badge-disabled" title="Operación ya anulada (irreversible)">
+                        Anulada
+                      </span>
+                    }
+                  </div>
+                </td>
+              </tr>
+            }
+            @empty {
+              <tr>
+                <td colspan="8" class="text-center empty-cell">
+                  No se encontraron rendiciones que coincidan con los filtros aplicados.
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+
+  <!-- MODAL DE VISUALIZACIÓN DETALLADA / EXPANDIBLE DE LA COLECCIÓN -->
+  @if (mostrarModalDetalle() && rendicionSeleccionada(); as rend) {
+    <div class="modal-backdrop">
+      <div class="modal-dialog">
+        <div class="modal-header">
+          <div>
+            <h3>Detalle Completo: Rendición {{ rend.codigo }}</h3>
+            <span class="subtitle">Registrado el {{ rend.fecha }} por {{ rend.responsable }}</span>
+          </div>
+          <button type="button" class="close-btn" (click)="cerrarModalDetalle()">×</button>
+        </div>
+
+        <div class="modal-body">
+          <div class="detalle-header-info">
+            <div><strong>Caja Chica:</strong> {{ getCajaNombre(rend.cajaChicaId) }}</div>
+            <div>
+              <strong>Estado Actual:</strong>
+              <span class="badge" [ngClass]="getEstadoClass(rend.estado)">{{ rend.estado }}</span>
+            </div>
+          </div>
+
+          <h4 style="margin: 1rem 0 0.5rem 0;">Líneas del Detalle Transaccional:</h4>
+          <table class="table-modal-detalle">
+            <thead>
+              <tr>
+                <th>Concepto / Ítem</th>
+                <th>Centro de Costo / Línea</th>
+                <th style="text-align: center;">Cantidad</th>
+                <th style="text-align: right;">Precio Unitario</th>
+                <th style="text-align: right;">Subtotal</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (det of rend.detalles; track $index) {
+                <tr>
+                  <td>{{ det.concepto }}</td>
+                  <td>
+                    <span class="badge" style="background: #e0f2fe; color: #0369a1; font-weight: 700;">
+                      {{ det.centroCostoCodigo || 'Sin CC' }}
+                    </span>
+                    @if (det.centroCostoNombre) {
+                      <span style="font-size: 0.75rem; color: #64748b; margin-left: 4px;">({{ det.centroCostoNombre }})</span>
+                    }
+                  </td>
+                  <td style="text-align: center;">{{ det.cantidad }}</td>
+                  <td style="text-align: right;">S/ {{ det.precioUnitario | number:'1.2-2' }}</td>
+                  <td style="text-align: right;"><strong>S/ {{ det.subtotal | number:'1.2-2' }}</strong></td>
+                </tr>
+              }
+              @empty {
+                <tr>
+                  <td colspan="5" class="text-center">No hay líneas asociadas a esta rendición.</td>
+                </tr>
+              }
+            </tbody>
+            <tfoot>
+              <tr>
+                <td colspan="4" style="text-align: right; font-weight: bold;">TOTAL RENDICIÓN:</td>
+                <td style="text-align: right; font-weight: bold; color: #1e3a8a; font-size: 1.1rem;">
+                  S/ {{ rend.montoTotal | number:'1.2-2' }}
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="cerrarModalDetalle()">
+            Cerrar
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- MODAL DE TRANSICIÓN DE ESTADO (ANULAR) CON REGLA DE NEGOCIO -->
+  @if (mostrarModalAnular() && rendicionParaAnular(); as rendAnular) {
+    <div class="modal-backdrop">
+      <div class="modal-dialog">
+        <div class="modal-header modal-header-danger">
+          <h3>Transición de Estado: Anular Rendición</h3>
+          <button type="button" class="close-btn" (click)="cerrarModalAnular()">×</button>
+        </div>
+
+        <div class="modal-body">
+          <div class="alert alert-solvencia" style="margin-bottom: 1rem;">
+            <span class="alert-icon">[!]</span>
+            <div>
+              <strong>ADVERTENCIA DE INTEGRIDAD TRANSACCIONAL</strong>
+              <p>Esta acción es definitiva e irreversible. Cambiará el estado de la rendición a <strong>ANULADO</strong>.</p>
+            </div>
+          </div>
+
+          <p>Detalles de la operación a anular:</p>
+          <ul style="line-height: 1.8;">
+            <li><strong>Código:</strong> {{ rendAnular.codigo }}</li>
+            <li><strong>Responsable:</strong> {{ rendAnular.responsable }}</li>
+            <li><strong>Caja Chica Afectada:</strong> {{ getCajaNombre(rendAnular.cajaChicaId) }}</li>
+            <li><strong>Importe Total:</strong> S/ {{ rendAnular.montoTotal | number:'1.2-2' }}</li>
+          </ul>
+
+          <div class="alerta-impacto" style="margin-top: 1rem;">
+            <strong>Efecto Colateral Financiero:</strong> Se reintegrarán automáticamente <strong>S/ {{ rendAnular.montoTotal | number:'1.2-2' }}</strong> al saldo disponible de la Caja Chica en una transacción atómica de compensación.
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="cerrarModalAnular()" [disabled]="loadingAnular()">
+            Cancelar
+          </button>
+          <button type="button" class="btn btn-danger" (click)="confirmarAnulacion()" [disabled]="loadingAnular()">
+            @if (loadingAnular()) {
+              Procesando anulación...
+            } @else {
+              Confirmar Anulación y Revertir Saldo
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- MODAL: ASIGNACIÓN DE NUEVA CAJA CHICA (FONDO FIJO) -->
+  @if (mostrarModalCajaChica()) {
+    <div class="modal-backdrop" (click)="cerrarModalCajaChica()">
+      <div class="modal-dialog" (click)="$event.stopPropagation()" style="max-width: 520px;">
+        <div class="modal-header">
+          <h3>Asignar Nuevo Fondo Fijo (Caja Chica)</h3>
+          <button type="button" class="btn-close" (click)="cerrarModalCajaChica()">&times;</button>
+        </div>
+
+        <div class="modal-body">
+          <div class="form-group" style="margin-bottom: 0.85rem;">
+            <label style="font-weight: 600; font-size: 0.85rem;">Código de Caja Chica *</label>
+            <input type="text" [value]="nuevaCajaCodigo()" (input)="nuevaCajaCodigo.set($any($event.target).value)" class="form-control" placeholder="Ej: CCH-2026-003" />
+          </div>
+
+          <div class="form-group" style="margin-bottom: 0.85rem;">
+            <label style="font-weight: 600; font-size: 0.85rem;">Responsable Asignado *</label>
+            <input type="text" [value]="nuevaCajaResponsable()" (input)="nuevaCajaResponsable.set($any($event.target).value)" class="form-control" placeholder="Ej: Juan Pérez (Logística Tarapoto)" />
+          </div>
+
+          <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 0.85rem;">
+            <div class="form-group">
+              <label style="font-weight: 600; font-size: 0.85rem;">Límite Máximo (S/) *</label>
+              <input type="number" [value]="nuevaCajaLimite()" (input)="nuevaCajaLimite.set(+$any($event.target).value)" class="form-control" />
+            </div>
+            <div class="form-group">
+              <label style="font-weight: 600; font-size: 0.85rem;">Saldo Inicial (S/) *</label>
+              <input type="number" [value]="nuevaCajaSaldo()" (input)="nuevaCajaSaldo.set(+$any($event.target).value)" class="form-control" />
+            </div>
+          </div>
+          <p class="help-text" style="font-size: 0.75rem; color: #64748b;">
+            El saldo inicial asignará la liquidez disponible para rendiciones menores de compras e insumos.
+          </p>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="cerrarModalCajaChica()" [disabled]="loadingCrearCaja()">
+            Cancelar
+          </button>
+          <button type="button" class="btn btn-primary" (click)="guardarCajaChica()" [disabled]="loadingCrearCaja()">
+            {{ loadingCrearCaja() ? 'Guardando...' : 'Crear Fondo de Caja Chica' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- MODAL: GESTIÓN PRESUPUESTAL POR CENTRO DE COSTO (M:N ASIGNACION_CAJA_CENTRO_COSTO) -->
+  @if (mostrarModalPresupuestos() && cajaParaPresupuesto(); as cajaP) {
+    <div class="modal-backdrop" (click)="cerrarModalPresupuestos()">
+      <div class="modal-dialog" (click)="$event.stopPropagation()" style="max-width: 680px;">
+        <div class="modal-header">
+          <div>
+            <h3>Gestión Presupuestal por Centro de Costo (M:N)</h3>
+            <p class="subtitle" style="margin: 0; font-size: 0.8125rem; color: #64748b;">
+              Caja Chica: <strong>{{ cajaP.codigo }}</strong> | Responsable: {{ cajaP.responsable }} | Saldo Total Caja: <strong>S/ {{ cajaP.saldoDisponible | number:'1.2-2' }}</strong>
+            </p>
+          </div>
+          <button type="button" class="btn-close" (click)="cerrarModalPresupuestos()">&times;</button>
+        </div>
+
+        <div class="modal-body">
+          @if (mensajeExitoPresupuesto()) {
+            <div class="alert alert-success" style="padding: 0.6rem 0.85rem; margin-bottom: 0.85rem;">
+              <span class="alert-icon">[OK]</span>
+              <div>{{ mensajeExitoPresupuesto() }}</div>
+            </div>
+          }
+
+          <!-- Formulario de Asignación / Actualización -->
+          <div class="card p-3 mb-3" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 0.75rem;">
+            <h4 style="margin: 0 0 0.5rem 0; font-size: 0.875rem; color: #1e293b;">
+              Asignar / Incrementar Techo Presupuestal a Línea de Costo
+            </h4>
+            <div style="display: grid; grid-template-columns: 2fr 1.2fr auto; gap: 0.5rem; align-items: flex-end;">
+              <div>
+                <label style="font-size: 0.75rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">Centro de Costo *</label>
+                <select
+                  class="form-control"
+                  style="font-size: 0.8125rem; padding: 0.4rem 0.6rem;"
+                  [ngModel]="formPresupuestoCentroCostoId()"
+                  (ngModelChange)="formPresupuestoCentroCostoId.set($event)"
+                >
+                  @for (cc of centrosCosto(); track cc.id) {
+                    <option [ngValue]="cc.id">{{ cc.codigoCc }} - {{ cc.nombreArea }}</option>
+                  }
+                </select>
+              </div>
+
+              <div>
+                <label style="font-size: 0.75rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">Monto Techo (S/) *</label>
+                <input
+                  type="number"
+                  min="1"
+                  step="50"
+                  class="form-control"
+                  style="font-size: 0.8125rem; padding: 0.4rem 0.6rem;"
+                  [ngModel]="formPresupuestoMonto()"
+                  (ngModelChange)="formPresupuestoMonto.set($event)"
+                />
+              </div>
+
+              <button
+                type="button"
+                class="btn btn-primary"
+                style="padding: 0.45rem 0.85rem; font-size: 0.8125rem;"
+                (click)="guardarPresupuesto()"
+                [disabled]="loadingPresupuestos()"
+              >
+                {{ loadingPresupuestos() ? 'Guardando...' : 'Asignar' }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Tabla de Asignaciones Actuales -->
+          <h4 style="margin: 0.75rem 0 0.5rem 0; font-size: 0.875rem; color: #1e293b;">
+            Líneas Asignadas a esta Caja Chica ({{ asignaciones().length }})
+          </h4>
+          <div class="table-responsive">
+            <table class="table-modal-detalle">
+              <thead>
+                <tr>
+                  <th>Código CC</th>
+                  <th>Área / Línea</th>
+                  <th style="text-align: right;">Presupuesto</th>
+                  <th style="text-align: right;">Disponible</th>
+                  <th style="width: 25%;">Consumo</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (asig of asignaciones(); track asig.centroCostoId) {
+                  <tr>
+                    <td>
+                      <span class="badge" style="background: #e0f2fe; color: #0369a1; font-weight: 700;">
+                        {{ asig.codigoCc }}
+                      </span>
+                    </td>
+                    <td style="font-size: 0.8125rem;">{{ asig.nombreArea }}</td>
+                    <td style="text-align: right; font-weight: 600;">S/ {{ asig.presupuestoAsignado | number:'1.2-2' }}</td>
+                    <td style="text-align: right; font-weight: 700; color: #15803d;">
+                      S/ {{ asig.saldoDisponible | number:'1.2-2' }}
+                    </td>
+                    <td>
+                      @let porcentaje = asig.presupuestoAsignado > 0 ? ((asig.presupuestoAsignado - asig.saldoDisponible) / asig.presupuestoAsignado) * 100 : 0;
+                      <div style="background: #e2e8f0; border-radius: 9999px; height: 8px; width: 100%; overflow: hidden;">
+                        <div
+                          style="height: 100%; border-radius: 9999px; transition: width 0.3s;"
+                          [style.width.%]="porcentaje > 100 ? 100 : (porcentaje < 0 ? 0 : porcentaje)"
+                          [style.background]="porcentaje > 80 ? '#dc2626' : (porcentaje > 50 ? '#f59e0b' : '#16a34a')"
+                        ></div>
+                      </div>
+                      <span style="font-size: 0.7rem; color: #64748b;">{{ porcentaje | number:'1.0-0' }}% consumido</span>
+                    </td>
+                  </tr>
+                }
+                @empty {
+                  <tr>
+                    <td colspan="5" class="text-center" style="padding: 1rem; color: #64748b;">
+                      No hay centros de costo asignados a esta caja chica. Utilice el formulario superior para crear la primera asignación.
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="cerrarModalPresupuestos()">
+            Cerrar
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

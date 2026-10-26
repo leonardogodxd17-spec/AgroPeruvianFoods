@@ -2,21 +2,25 @@
   <!-- Hero Section -->
   <div class="hero-card">
     <div class="hero-content">
-      <div class="hero-badge">ARQUITECTURA SPA · SESIÓN 07</div>
+      <div class="hero-badge">ARQUITECTURA SPA · SEGUNDO CORTE INTEGRADO</div>
       <h1 class="hero-title">ERP Agro Peruvian Foods S.A.C.</h1>
       <p class="hero-subtitle">
         Plataforma empresarial integrada para el control financiero de caja, punto de venta (POS), 
         producción por lotes con recetas BOM y gestión de compras a proveedores agroindustriales.
       </p>
       <div class="hero-meta">
-        <span class="meta-tag">Angular 22.2 (Zoneless)</span>
-        <span class="meta-tag">Spring Boot 3 + Oracle / H2</span>
-        <span class="meta-tag">X-Trace-ID HTTP Interceptor</span>
+        <span class="meta-tag">Angular 19 (Standalone)</span>
+        <span class="meta-tag">Spring Boot 4 + Oracle / H2</span>
+        <span class="meta-tag">Keycloak v26 (PKCE S256)</span>
       </div>
     </div>
     <div class="hero-status">
       <div class="status-card" [class.online]="apiOnline()">
-        <div class="status-icon">{{ apiOnline() ? '🟢' : '🟡' }}</div>
+        <div class="status-icon">
+          <span class="material-symbols-outlined" [style.color]="apiOnline() ? '#10b981' : '#f59e0b'">
+            {{ apiOnline() ? 'check_circle' : 'pending' }}
+          </span>
+        </div>
         <div>
           <div class="status-title">{{ apiOnline() ? 'API REST En Línea' : 'API Standby / Local' }}</div>
           <div class="status-sub">http://localhost:8080/api/v1</div>
@@ -35,7 +39,7 @@
     <!-- Módulo 1: Caja -->
     <div class="module-card">
       <div class="module-header">
-        <span class="module-icon">💵</span>
+        <span class="material-symbols-outlined" style="font-size: 2.2rem; color: #059669;">point_of_sale</span>
         <span class="badge badge-success">Módulo 1</span>
       </div>
       <h3 class="module-name">Gestión Financiera de Caja</h3>
@@ -46,33 +50,34 @@
         <strong>Líder:</strong> Brandon Andree Ccalla Colquehuanca
       </div>
       <div class="module-actions">
-        <a routerLink="/caja" class="btn btn-primary btn-sm">Ver Sesión & Arqueo</a>
+        <a routerLink="/finanzas/sesiones" class="btn btn-primary btn-sm">Sesiones de Caja</a>
+        <a routerLink="/finanzas/rendiciones" class="btn btn-secondary btn-sm">Rendiciones</a>
       </div>
     </div>
 
     <!-- Módulo 2: Ventas -->
     <div class="module-card">
       <div class="module-header">
-        <span class="module-icon">🛒</span>
+        <span class="material-symbols-outlined" style="font-size: 2.2rem; color: #0284c7;">shopping_cart_checkout</span>
         <span class="badge badge-info">Módulo 2</span>
       </div>
       <h3 class="module-name">Ventas y Tickets POS</h3>
       <p class="module-desc">
-        Transacciones comerciales en tienda física y ferias, cálculo de IGV, emisión de tickets ESC/POS y reposición atómica de inventario al anular.
+        Transacciones comerciales en mostrador, integración DNI con RENIEC vía APIsPERU, emisión de tickets 80mm ESC/POS y reposición atómica de inventario.
       </p>
       <div class="module-lead">
         <strong>Líder:</strong> Zaggy Leonardo Morales Auquipata
       </div>
       <div class="module-actions">
-        <a routerLink="/ventas" class="btn btn-primary btn-sm">Historial Ventas</a>
-        <a routerLink="/ventas/nueva" class="btn btn-secondary btn-sm">Emitir Ticket</a>
+        <a routerLink="/ventas/reporte" class="btn btn-primary btn-sm">Historial Ventas</a>
+        <a routerLink="/ventas/nueva" class="btn btn-secondary btn-sm">Nueva Venta POS</a>
       </div>
     </div>
 
     <!-- Módulo 3: Producción -->
     <div class="module-card">
       <div class="module-header">
-        <span class="module-icon">⚙️</span>
+        <span class="material-symbols-outlined" style="font-size: 2.2rem; color: #ea580c;">precision_manufacturing</span>
         <span class="badge badge-warning">Módulo 3</span>
       </div>
       <h3 class="module-name">Producción y Envasado BOM</h3>
@@ -85,14 +90,13 @@
       <div class="module-actions">
         <a routerLink="/produccion" class="btn btn-primary btn-sm">Órdenes Planta</a>
         <a routerLink="/catalogo/productos" class="btn btn-secondary btn-sm">Productos S08</a>
-        <a routerLink="/catalogo/categorias" class="btn btn-secondary btn-sm">Categorías S07</a>
       </div>
     </div>
 
     <!-- Módulo 4: Compras -->
     <div class="module-card">
       <div class="module-header">
-        <span class="module-icon">📦</span>
+        <span class="material-symbols-outlined" style="font-size: 2.2rem; color: #059669;">inventory_2</span>
         <span class="badge badge-success">Módulo 4</span>
       </div>
       <h3 class="module-name">Compras & Proveedores</h3>

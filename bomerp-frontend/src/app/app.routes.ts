@@ -24,6 +24,150 @@ export const routes: Routes = [
         loadComponent: () => import('./features/caja/caja-dashboard').then((m) => m.CajaDashboard),
         title: 'Caja & Movimientos · ERP Agro Peruvian Foods',
       },
+      // --- Finanzas: Transacciones, Rendiciones, Sesiones y Créditos (Brandon Ccalla) ---
+      {
+        path: 'finanzas/transacciones',
+        canActivate: [authGuard],
+        loadComponent: () =>
+          import('./features/finanzas/transaccion-financiera/transaccion-financiera-list').then(
+            (m) => m.TransaccionFinancieraList
+          ),
+        title: 'Transacciones Financieras · ERP Agro Peruvian Foods',
+      },
+      {
+        path: 'finanzas/transacciones/nueva',
+        canActivate: [authGuard, rolGuard('ADMIN', 'ADMIN_FINANZAS', 'SUPERVISOR')],
+        loadComponent: () =>
+          import('./features/finanzas/transaccion-financiera/transaccion-financiera-form').then(
+            (m) => m.TransaccionFinancieraForm
+          ),
+        title: 'Nueva Transacción Financiera · ERP Agro Peruvian Foods',
+      },
+      {
+        path: 'finanzas/transacciones/:id/editar',
+        canActivate: [authGuard, rolGuard('ADMIN', 'ADMIN_FINANZAS', 'SUPERVISOR')],
+        loadComponent: () =>
+          import('./features/finanzas/transaccion-financiera/transaccion-financiera-form').then(
+            (m) => m.TransaccionFinancieraForm
+          ),
+        title: 'Editar Transacción · ERP Agro Peruvian Foods',
+      },
+      {
+        path: 'finanzas/categorias',
+        canActivate: [authGuard],
+        loadComponent: () =>
+          import('./features/finanzas/categoria-financiera/categoria-financiera-list').then(
+            (m) => m.CategoriaFinancieraList
+          ),
+        title: 'Categorías Financieras · ERP Agro Peruvian Foods',
+      },
+      {
+        path: 'finanzas/categorias/nueva',
+        canActivate: [authGuard, rolGuard('ADMIN', 'ADMIN_FINANZAS', 'SUPERVISOR')],
+        loadComponent: () =>
+          import('./features/finanzas/categoria-financiera/categoria-financiera-form').then(
+            (m) => m.CategoriaFinancieraForm
+          ),
+        title: 'Nueva Categoría Financiera · ERP Agro Peruvian Foods',
+      },
+      {
+        path: 'finanzas/categorias/:id/editar',
+        canActivate: [authGuard, rolGuard('ADMIN', 'ADMIN_FINANZAS', 'SUPERVISOR')],
+        loadComponent: () =>
+          import('./features/finanzas/categoria-financiera/categoria-financiera-form').then(
+            (m) => m.CategoriaFinancieraForm
+          ),
+        title: 'Editar Categoría Financiera · ERP Agro Peruvian Foods',
+      },
+      {
+        path: 'finanzas/rendiciones',
+        canActivate: [authGuard],
+        loadComponent: () =>
+          import('./features/finanzas/rendicion-caja-chica/rendicion-caja-chica-list').then(
+            (m) => m.RendicionCajaChicaList
+          ),
+        title: 'Rendiciones de Caja Chica · ERP Agro Peruvian Foods',
+      },
+      {
+        path: 'finanzas/rendiciones/nueva',
+        canActivate: [authGuard, rolGuard('ADMIN', 'ADMIN_FINANZAS', 'SUPERVISOR', 'CAJERO')],
+        loadComponent: () =>
+          import('./features/finanzas/rendicion-caja-chica/rendicion-caja-chica-form').then(
+            (m) => m.RendicionCajaChicaForm
+          ),
+        title: 'Nueva Rendición de Caja Chica · ERP Agro Peruvian Foods',
+      },
+      {
+        path: 'finanzas/sesiones',
+        canActivate: [authGuard],
+        loadComponent: () =>
+          import('./features/finanzas/sesion-caja/sesion-caja-list').then((m) => m.SesionCajaList),
+        title: 'Sesiones de Caja Diaria · ERP Agro Peruvian Foods',
+      },
+      {
+        path: 'finanzas/sesiones/nueva',
+        canActivate: [authGuard, rolGuard('ADMIN', 'ADMIN_FINANZAS', 'SUPERVISOR', 'CAJERO')],
+        loadComponent: () =>
+          import('./features/finanzas/sesion-caja/sesion-caja-form').then((m) => m.SesionCajaForm),
+        title: 'Apertura de Caja · ERP Agro Peruvian Foods',
+      },
+      {
+        path: 'finanzas/sesiones/:id',
+        canActivate: [authGuard, rolGuard('ADMIN', 'ADMIN_FINANZAS', 'SUPERVISOR', 'CAJERO')],
+        loadComponent: () =>
+          import('./features/finanzas/sesion-caja/sesion-caja-form').then((m) => m.SesionCajaForm),
+        title: 'Detalle de Sesión de Caja · ERP Agro Peruvian Foods',
+      },
+      {
+        path: 'finanzas/creditos',
+        canActivate: [authGuard],
+        loadComponent: () =>
+          import('./features/finanzas/cuenta-cobrar/cuenta-cobrar-list').then(
+            (m) => m.CuentaCobrarList
+          ),
+        title: 'Cuentas por Cobrar · ERP Agro Peruvian Foods',
+      },
+      {
+        path: 'finanzas/creditos/nuevo',
+        canActivate: [authGuard, rolGuard('ADMIN', 'ADMIN_FINANZAS', 'CAJERO')],
+        loadComponent: () =>
+          import('./features/finanzas/cuenta-cobrar/cuenta-cobrar-form').then(
+            (m) => m.CuentaCobrarForm
+          ),
+        title: 'Nuevo Crédito · ERP Agro Peruvian Foods',
+      },
+      {
+        path: 'finanzas/reportes',
+        canActivate: [authGuard],
+        loadComponent: () =>
+          import('./features/finanzas/reporte-financiero/reporte-financiero-list').then(
+            (m) => m.ReporteFinancieroList
+          ),
+        title: 'Reportes y Dashboard Financiero · ERP Agro Peruvian Foods',
+      },
+      // --- Inventario: Lotes, FEFO y Kardex ---
+      {
+        path: 'inventario/lotes',
+        canActivate: [authGuard],
+        loadComponent: () =>
+          import('./features/inventario/lote-list').then((m) => m.LoteList),
+        title: 'Lotes y Control FEFO · ERP Agro Peruvian Foods',
+      },
+      {
+        path: 'inventario/kardex',
+        canActivate: [authGuard],
+        loadComponent: () =>
+          import('./features/inventario/kardex-list').then((m) => m.KardexList),
+        title: 'Kardex de Inventario · ERP Agro Peruvian Foods',
+      },
+      // --- Delivery y Omnicanal ---
+      {
+        path: 'ventas/delivery',
+        canActivate: [authGuard],
+        loadComponent: () =>
+          import('./features/ventas/delivery/delivery-list').then((m) => m.DeliveryList),
+        title: 'Despachos y Pedidos Delivery · ERP Agro Peruvian Foods',
+      },
       // Módulo 2: Ventas POS (Zaggy Morales) - S09
       {
         path: 'ventas',

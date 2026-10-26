@@ -7,18 +7,21 @@
     </div>
     <div class="header-actions">
       <a routerLink="/compras/proveedores/nuevo" class="btn btn-primary">
-        ➕ Registrar Proveedor
+        <span class="material-symbols-outlined icon-inline">add_circle</span> Registrar Proveedor
       </a>
       <a routerLink="/compras" class="btn btn-secondary">
-        📦 Ver Compras
+        <span class="material-symbols-outlined icon-inline">shopping_bag</span> Ver Compras
       </a>
-      <button class="btn btn-secondary" (click)="cargarDatos()">🔄</button>
+      <button class="btn btn-secondary" (click)="cargarDatos()" title="Actualizar">
+        <span class="material-symbols-outlined" style="vertical-align: middle;">refresh</span>
+      </button>
     </div>
   </div>
 
   @if (error()) {
-    <div class="alert alert-danger">
-      <span>⚠️ {{ error() }}</span>
+    <div class="alert alert-danger" style="display: flex; align-items: center; gap: 0.5rem;">
+      <span class="material-symbols-outlined">warning</span>
+      <span>{{ error() }}</span>
     </div>
   }
 

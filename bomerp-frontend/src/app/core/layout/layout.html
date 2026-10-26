@@ -16,53 +16,82 @@
     <nav class="sidebar-nav">
       <div class="nav-section-title">PRINCIPAL</div>
       <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" class="nav-item">
-        <span class="nav-icon">📊</span>
+        <span class="material-symbols-outlined nav-icon">dashboard</span>
         <span>Dashboard General</span>
       </a>
 
       @if (auth.autenticado()) {
-        <!-- Módulo 1: Finanzas & Caja (SUPERVISOR, ADMIN) -->
-        @if (auth.tieneRol('SUPERVISOR', 'ADMIN')) {
-          <div class="nav-section-title">MÓDULO 1 · FINANZAS</div>
-          <a routerLink="/caja" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" class="nav-item">
-            <span class="nav-icon">💵</span>
-            <span>Sesión & Movimientos</span>
-          </a>
-        }
+        <!-- Módulo 1: Finanzas & Caja (Brandon Ccalla) -->
+        <div class="nav-section-title">MÓDULO 1 · FINANZAS (BRANDON)</div>
+        <a routerLink="/finanzas/sesiones" routerLinkActive="active" class="nav-item">
+          <span class="material-symbols-outlined nav-icon">point_of_sale</span>
+          <span>Sesiones de Caja</span>
+        </a>
+        <a routerLink="/finanzas/rendiciones" routerLinkActive="active" class="nav-item">
+          <span class="material-symbols-outlined nav-icon">receipt_long</span>
+          <span>Rendición Caja Chica</span>
+        </a>
+        <a routerLink="/finanzas/creditos" routerLinkActive="active" class="nav-item">
+          <span class="material-symbols-outlined nav-icon">credit_card</span>
+          <span>Cuentas por Cobrar</span>
+        </a>
+        <a routerLink="/finanzas/reportes" routerLinkActive="active" class="nav-item">
+          <span class="material-symbols-outlined nav-icon">analytics</span>
+          <span>Dashboard Financiero</span>
+        </a>
+        <a routerLink="/caja" routerLinkActive="active" class="nav-item">
+          <span class="material-symbols-outlined nav-icon">account_balance</span>
+          <span>Arqueo de Turno</span>
+        </a>
 
-        <!-- Módulo 2: Ventas POS (S09 / S11) -->
-        <div class="nav-section-title">MÓDULO 2 · VENTAS (S09)</div>
+        <!-- Módulo 2: Ventas POS (Zaggy Morales) -->
+        <div class="nav-section-title">MÓDULO 2 · VENTAS POS (ZAGGY)</div>
         <a routerLink="/ventas/reporte" routerLinkActive="active" class="nav-item">
-          <span class="nav-icon">📊</span>
+          <span class="material-symbols-outlined nav-icon">bar_chart</span>
           <span>Reporte de Ventas</span>
         </a>
-        @if (auth.tieneRol('VENDEDOR', 'SUPERVISOR')) {
+        @if (auth.tieneRol('VENDEDOR', 'SUPERVISOR', 'ADMIN')) {
           <a routerLink="/ventas/nueva" routerLinkActive="active" class="nav-item">
-            <span class="nav-icon">🧾</span>
-            <span>Nueva Venta (FormArray)</span>
+            <span class="material-symbols-outlined nav-icon">shopping_cart_checkout</span>
+            <span>Nueva Venta (DNI + Ticket)</span>
           </a>
         }
+        <a routerLink="/ventas/delivery" routerLinkActive="active" class="nav-item">
+          <span class="material-symbols-outlined nav-icon">local_shipping</span>
+          <span>Pedidos Delivery</span>
+        </a>
+
+        <!-- Módulo Inventario & FEFO -->
+        <div class="nav-section-title">INVENTARIO & LOTES</div>
+        <a routerLink="/inventario/lotes" routerLinkActive="active" class="nav-item">
+          <span class="material-symbols-outlined nav-icon">inventory_2</span>
+          <span>Lotes FEFO</span>
+        </a>
+        <a routerLink="/inventario/kardex" routerLinkActive="active" class="nav-item">
+          <span class="material-symbols-outlined nav-icon">assignment</span>
+          <span>Kardex Físico</span>
+        </a>
 
         <!-- Módulo 3: Producción & BOM + Catálogo -->
         <div class="nav-section-title">MÓDULO 3 · PRODUCCIÓN</div>
         @if (auth.tieneRol('SUPERVISOR', 'ADMIN')) {
           <a routerLink="/produccion" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" class="nav-item">
-            <span class="nav-icon">⚙️</span>
+            <span class="material-symbols-outlined nav-icon">precision_manufacturing</span>
             <span>Órdenes de Planta</span>
           </a>
         }
         @if (auth.tieneRol('ADMIN')) {
           <a routerLink="/produccion/nueva" routerLinkActive="active" class="nav-item">
-            <span class="nav-icon">📋</span>
+            <span class="material-symbols-outlined nav-icon">playlist_add</span>
             <span>Nueva Orden BOM</span>
           </a>
         }
         <a routerLink="/catalogo/categorias" routerLinkActive="active" class="nav-item">
-          <span class="nav-icon">🏷️</span>
+          <span class="material-symbols-outlined nav-icon">category</span>
           <span>Categorías (S07 Base)</span>
         </a>
         <a routerLink="/catalogo/productos" routerLinkActive="active" class="nav-item">
-          <span class="nav-icon">🥑</span>
+          <span class="material-symbols-outlined nav-icon">inventory</span>
           <span>Productos (S08 Dependiente)</span>
         </a>
 
@@ -70,11 +99,11 @@
         @if (auth.tieneRol('SUPERVISOR', 'ADMIN')) {
           <div class="nav-section-title">MÓDULO 4 · COMPRAS</div>
           <a routerLink="/compras" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" class="nav-item">
-            <span class="nav-icon">📦</span>
+            <span class="material-symbols-outlined nav-icon">shopping_bag</span>
             <span>Compras de Insumos</span>
           </a>
           <a routerLink="/compras/proveedores" routerLinkActive="active" class="nav-item">
-            <span class="nav-icon">🏭</span>
+            <span class="material-symbols-outlined nav-icon">store</span>
             <span>Proveedores (Maestro)</span>
           </a>
         }
@@ -111,7 +140,8 @@
         </div>
 
         <div class="clock-box">
-          🕒 {{ currentDateTime() | date:'dd/MM/yyyy HH:mm:ss' }}
+          <span class="material-symbols-outlined icon-inline" style="font-size: 1.05rem;">schedule</span>
+          {{ currentDateTime() | date:'dd/MM/yyyy HH:mm:ss' }}
         </div>
 
         @if (auth.autenticado()) {
@@ -122,12 +152,14 @@
               <span class="user-role">{{ auth.roles().join(', ') }}</span>
             </div>
             <button type="button" class="btn-auth-logout" (click)="auth.cerrarSesion()" title="Cerrar sesión en Keycloak">
+              <span class="material-symbols-outlined icon-inline" style="font-size: 0.95rem;">logout</span>
               Cerrar sesión
             </button>
           </div>
         } @else {
           <button type="button" class="btn-auth-login" (click)="auth.iniciarLogin()" title="Iniciar sesión con Keycloak">
-            🔐 Iniciar sesión
+            <span class="material-symbols-outlined icon-inline" style="font-size: 1.05rem;">lock</span>
+            Iniciar sesión
           </button>
         }
       </div>

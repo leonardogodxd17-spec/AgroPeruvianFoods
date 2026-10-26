@@ -1,0 +1,84 @@
+<h2>Transacciones Financieras (Agro Peruvian Foods)</h2>
+
+@if (loading()) {
+  <p>Cargando transacciones financieras...</p>
+}
+
+@if (error()) {
+  <p class="error" style="color: red;">{{ error() }}</p>
+}
+
+<div style="margin-bottom: 1rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+  <a routerLink="/finanzas/transacciones/nueva">+ Nueva transacción financiera</a>
+
+  <label style="font-weight: 500;">
+    Filtrar por Categoría Financiera:
+    <select #filtro (change)="filtrar(+filtro.value)" style="padding: 0.35rem 0.5rem; margin-left: 0.5rem;">
+      <option value="0">Todas las categorías</option>
+      @for (categoria of categorias(); track categoria.id) {
+        <option [value]="categoria.id">{{ categoria.nombre }} ({{ categoria.tipoDefault }})</option>
+      }
+    </select>
+  </label>
+</div>
+
+<table border="1" cellpadding="8" cellspacing="0" style="width: 100%; border-collapse: collapse;">
+  <thead>
+    <tr style="background-color: #f2f2f2;">
+      <th>Código</th>
+      <th>Concepto</th>
+      <th>Categoría Financiera (Padre)</th>
+      <th>Tipo</th>
+      <th>Monto</th>
+      <th>Fecha</th>
+      <th>Estado</th>
+      <th>Comprobante</th>
+      <th>Acciones</th>
+    </tr>
+  </thead>
+  <tbody>
+    @for (trx of transacciones(); track trx.id) {
+      <tr>
+        <td><strong>{{ trx.codigo }}</strong></td>
+        <td>{{ trx.concepto }}</td>
+        <td>
+          <span style="background-color: #e8eaf6; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: 500;">
+            {{ trx.categoriaFinanciera.nombre }}
+          </span>
+        </td>
+        <td>
+          <span [style.color]="trx.tipo === 'INGRESO' ? 'green' : 'crimson'" style="font-weight: bold;">
+            {{ trx.tipo }}
+          </span>
+        </td>
+        <td style="font-weight: bold;">
+          {{ trx.monto | currency: 'PEN' : 'S/ ' }}
+        </td>
+        <td>{{ trx.fechaTransaccion | date: 'dd/MM/yyyy' }}</td>
+        <td>
+          <span [style.color]="trx.estado === 'PAGADO' ? '#2e7d32' : (trx.estado === 'PENDIENTE' ? '#e65100' : '#c62828')">
+            {{ trx.estado }}
+          </span>
+        </td>
+        <td>
+          @if (trx.tipoComprobante) {
+            {{ trx.tipoComprobante }}: {{ trx.numeroComprobante }}
+          } @else {
+            <em>Sin comprobante</em>
+          }
+        </td>
+        <td>
+          <a [routerLink]="['/finanzas/transacciones', trx.id, 'editar']">Editar</a>
+          &nbsp;|&nbsp;
+          <button (click)="eliminar(trx.id)">Eliminar</button>
+        </td>
+      </tr>
+    } @empty {
+      @if (!loading() && !error()) {
+        <tr>
+          <td colspan="9">No hay transacciones financieras registradas.</td>
+        </tr>
+      }
+    }
+  </tbody>
+</table>

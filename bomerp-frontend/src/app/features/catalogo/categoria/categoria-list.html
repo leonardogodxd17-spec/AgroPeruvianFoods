@@ -8,11 +8,11 @@
     <div class="header-actions">
       @if (auth.tieneRol('ADMIN')) {
         <a routerLink="/catalogo/categorias/nueva" class="btn btn-primary">
-          ➕ Nueva Categoría
+          <span class="material-symbols-outlined icon-inline">add_circle</span> Nueva Categoría
         </a>
       }
       <button class="btn btn-secondary" (click)="cargarDatos()">
-        🔄 Actualizar
+        <span class="material-symbols-outlined icon-inline">refresh</span> Actualizar
       </button>
     </div>
   </div>
@@ -25,14 +25,16 @@
   }
 
   @if (error()) {
-    <div class="alert alert-danger">
-      <span>⚠️ {{ error() }}</span>
+    <div class="alert alert-danger" style="display: flex; align-items: center; gap: 0.5rem;">
+      <span class="material-symbols-outlined">warning</span>
+      <span>{{ error() }}</span>
     </div>
   }
 
   @if (successMsg()) {
-    <div class="alert alert-success">
-      <span>✅ {{ successMsg() }}</span>
+    <div class="alert alert-success" style="display: flex; align-items: center; gap: 0.5rem;">
+      <span class="material-symbols-outlined">check_circle</span>
+      <span>{{ successMsg() }}</span>
     </div>
   }
 
@@ -57,10 +59,10 @@
                 <div class="btn-group">
                   @if (auth.tieneRol('ADMIN')) {
                     <a [routerLink]="['/catalogo/categorias', categoria.id]" class="btn btn-secondary btn-sm">
-                      ✏️ Editar
+                      <span class="material-symbols-outlined icon-inline" style="font-size: 1rem;">edit</span> Editar
                     </a>
                     <button class="btn btn-danger btn-sm" (click)="eliminar(categoria)">
-                      🗑️ Eliminar
+                      <span class="material-symbols-outlined icon-inline" style="font-size: 1rem;">delete</span> Eliminar
                     </button>
                   } @else {
                     <span style="color:#94a3b8;font-size:0.75rem;font-weight:600;">Lectura</span>

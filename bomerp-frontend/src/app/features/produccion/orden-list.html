@@ -7,23 +7,27 @@
     </div>
     <div class="header-actions">
       <a routerLink="/produccion/nueva" class="btn btn-primary">
-        📋 Planificar Nueva Orden BOM
+        <span class="material-symbols-outlined icon-inline">precision_manufacturing</span> Planificar Nueva Orden BOM
       </a>
       <a routerLink="/catalogo/categorias" class="btn btn-secondary">
-        🏷️ Categorías
+        <span class="material-symbols-outlined icon-inline">category</span> Categorías
       </a>
-      <button class="btn btn-secondary" (click)="cargarDatos()">🔄</button>
+      <button class="btn btn-secondary" (click)="cargarDatos()" title="Actualizar">
+        <span class="material-symbols-outlined" style="vertical-align: middle;">refresh</span>
+      </button>
     </div>
   </div>
 
   @if (error()) {
-    <div class="alert alert-danger">
-      <span>⚠️ {{ error() }}</span>
+    <div class="alert alert-danger" style="display: flex; align-items: center; gap: 0.5rem;">
+      <span class="material-symbols-outlined">warning</span>
+      <span>{{ error() }}</span>
     </div>
   }
   @if (successMsg()) {
-    <div class="alert alert-success">
-      <span>✅ {{ successMsg() }}</span>
+    <div class="alert alert-success" style="display: flex; align-items: center; gap: 0.5rem;">
+      <span class="material-symbols-outlined">check_circle</span>
+      <span>{{ successMsg() }}</span>
     </div>
   }
 
@@ -31,21 +35,21 @@
   @if (resumen(); as r) {
     <div class="metrics-grid">
       <div class="metric-card">
-        <span class="metric-icon">📑</span>
+        <span class="material-symbols-outlined metric-icon">assignment</span>
         <div>
           <span class="metric-label">Órdenes Planificadas</span>
           <h3 class="metric-value">{{ r.totalOrdenes }}</h3>
         </div>
       </div>
       <div class="metric-card">
-        <span class="metric-icon text-success">🏭</span>
+        <span class="material-symbols-outlined metric-icon text-success">precision_manufacturing</span>
         <div>
           <span class="metric-label">Órdenes Completadas</span>
           <h3 class="metric-value text-success">{{ r.ordenesCompletadas }}</h3>
         </div>
       </div>
       <div class="metric-card">
-        <span class="metric-icon text-warning">📦</span>
+        <span class="material-symbols-outlined metric-icon text-warning">inventory_2</span>
         <div>
           <span class="metric-label">Unidades Fabricadas</span>
           <h3 class="metric-value text-warning">{{ r.unidadesTotalesProducidas }}</h3>
@@ -90,12 +94,18 @@
               </td>
               <td class="text-center">
                 <div class="btn-group">
-                  <button class="btn btn-secondary btn-sm" (click)="verDetalle(o)">👁️ Insumos</button>
+                  <button class="btn btn-secondary btn-sm" (click)="verDetalle(o)">
+                    <span class="material-symbols-outlined icon-inline" style="font-size: 1rem;">visibility</span> Insumos
+                  </button>
                   @if (o.estado === 'PROGRAMADA') {
-                    <button class="btn btn-primary btn-sm" (click)="iniciar(o)">▶️ Iniciar</button>
+                    <button class="btn btn-primary btn-sm" (click)="iniciar(o)">
+                      <span class="material-symbols-outlined icon-inline" style="font-size: 1rem;">play_arrow</span> Iniciar
+                    </button>
                   }
                   @if (o.estado === 'EN_PROCESO') {
-                    <button class="btn btn-success btn-sm" (click)="abrirCompletar(o)">✅ Completar Lote</button>
+                    <button class="btn btn-success btn-sm" (click)="abrirCompletar(o)">
+                      <span class="material-symbols-outlined icon-inline" style="font-size: 1rem;">check_circle</span> Completar Lote
+                    </button>
                   }
                 </div>
               </td>

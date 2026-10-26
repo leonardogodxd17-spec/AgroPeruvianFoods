@@ -23,6 +23,11 @@ public class SecurityConfig {
     private final CorsConfigurationSource corsConfigurationSource;
 
     @Bean
+    public org.springframework.security.crypto.password.PasswordEncoder passwordEncoder() {
+        return new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder();
+    }
+
+    @Bean
     public JwtAuthenticationConverter jwtAuthenticationConverter() {
         JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
         converter.setJwtGrantedAuthoritiesConverter(jwt -> {
@@ -63,7 +68,16 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/api/v1/ventas/*/anular").hasAnyRole("SUPERVISOR", "ADMIN")
                         .requestMatchers("/api/v1/ventas/**").hasAnyRole("VENDEDOR", "SUPERVISOR", "ADMIN")
 
-                        // 4. Todo lo demás requiere autenticación
+                        // 4. Finanzas (Brandon - S09/S10b): Turnos de Caja, Rendiciones y Cuentas por Cobrar
+                        .requestMatchers(HttpMethod.GET, "/api/v1/finanzas/**", "/api/v1/cajas-chicas/**").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/finanzas/**", "/api/v1/cajas-chicas/**").hasAnyRole("ADMIN", "ADMIN_FINANZAS", "SUPERVISOR", "CAJERO")
+                        .requestMatchers(HttpMethod.PUT, "/api/v1/finanzas/**", "/api/v1/cajas-chicas/**").hasAnyRole("ADMIN", "ADMIN_FINANZAS", "SUPERVISOR")
+                        .requestMatchers(HttpMethod.DELETE, "/api/v1/finanzas/**", "/api/v1/cajas-chicas/**").hasAnyRole("ADMIN", "ADMIN_FINANZAS")
+
+                        // 5. Inventario: Lotes, FEFO y Kardex
+                        .requestMatchers("/api/v1/inventario/**").hasAnyRole("ADMIN", "SUPERVISOR", "VENDEDOR", "CAJERO")
+
+                        // 6. Todo lo demás requiere autenticación
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2

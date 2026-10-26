@@ -63,6 +63,18 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.BAD_REQUEST, "Bad Request", ex.getMessage(), null);
     }
 
+    @ExceptionHandler(SolvenciaInsuficienteException.class)
+    public ResponseEntity<Map<String, Object>> handleSolvenciaInsuficiente(SolvenciaInsuficienteException ex) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("timestamp", Instant.now().toString());
+        body.put("status", HttpStatus.BAD_REQUEST.value());
+        body.put("error", "Bad Request");
+        body.put("reglaNegocio", "RN-FIN-01");
+        body.put("message", ex.getMessage());
+        body.put("traceId", MDC.get("traceId"));
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGeneral(Exception ex) {
         return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Internal Server Error", ex.getMessage(), null);

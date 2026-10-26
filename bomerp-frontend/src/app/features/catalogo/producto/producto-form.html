@@ -13,15 +13,17 @@
   </div>
 
   @if (error()) {
-    <div class="alert alert-danger">
-      <span>⚠️ {{ error() }}</span>
+    <div class="alert alert-danger" style="display: flex; align-items: center; gap: 0.5rem;">
+      <span class="material-symbols-outlined">warning</span>
+      <span>{{ error() }}</span>
     </div>
   }
 
   <!-- Validación Nivel 2: Advertencia si no existen categorías en la base de datos -->
   @if (categoriasCargadas() && categorias().length === 0) {
-    <div class="alert alert-danger">
-      <span>⚠️ No hay categorías registradas en el catálogo. Un producto depende de una categoría padre obligatoriamente: 
+    <div class="alert alert-danger" style="display: flex; align-items: center; gap: 0.5rem;">
+      <span class="material-symbols-outlined">warning</span>
+      <span>No hay categorías registradas en el catálogo. Un producto depende de una categoría padre obligatoriamente: 
         <a routerLink="/catalogo/categorias/nueva">cree una categoría primero aquí</a>.
       </span>
     </div>
@@ -116,7 +118,8 @@
           class="btn btn-primary"
           [disabled]="loading() || errorCarga() || (categoriasCargadas() && categorias().length === 0)"
         >
-          {{ loading() ? 'Guardando en Catálogo...' : (id() ? '💾 Actualizar Producto' : '➕ Guardar Producto') }}
+          <span class="material-symbols-outlined icon-inline">{{ id() ? 'save' : 'add_circle' }}</span>
+          {{ loading() ? 'Guardando en Catálogo...' : (id() ? 'Actualizar Producto' : 'Guardar Producto') }}
         </button>
         <a routerLink="/catalogo/productos" class="btn btn-secondary">Cancelar</a>
       </div>

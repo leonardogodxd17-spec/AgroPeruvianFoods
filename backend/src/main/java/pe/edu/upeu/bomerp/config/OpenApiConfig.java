@@ -20,7 +20,7 @@ public class OpenApiConfig {
                 .info(new Info()
                         .title("ERP Agro Peruvian Foods API")
                         .version("v1")
-                        .description("Contrato REST modular seguro para la gestión de Caja, Ventas POS, Producción BOM y Compras (S10 - JWT & Roles).")
+                        .description("Contrato REST modular seguro para la gestión de Ventas POS, Finanzas, Inventario FEFO, Catálogo y Compras (S10b/S11/S12 - Keycloak OAuth2 & RBAC).")
                         .contact(new Contact().name("Los Hijos del Backend - Sección G2G3")))
                 .components(new Components().addSecuritySchemes(ESQUEMA_JWT,
                         new SecurityScheme()

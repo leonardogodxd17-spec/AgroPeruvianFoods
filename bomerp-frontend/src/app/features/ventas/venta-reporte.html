@@ -15,18 +15,18 @@
           (click)="eliminarTodas()"
           title="Eliminar todas las ventas registradas del reporte"
         >
-          🗑️ Eliminar Todas las Ventas
+          <span class="material-symbols-outlined icon-inline">delete_forever</span> Eliminar Todas las Ventas
         </button>
       }
       <a routerLink="/ventas/nueva" class="btn btn-primary">
-        ➕ Nueva Venta POS
+        <span class="material-symbols-outlined icon-inline">point_of_sale</span> Nueva Venta POS
       </a>
     </div>
   </div>
 
   @if (error()) {
     <div class="alert alert-danger">
-      <span class="alert-icon">⚠️</span>
+      <span class="material-symbols-outlined alert-icon">warning</span>
       <div>{{ error() }}</div>
     </div>
   }
@@ -78,7 +78,7 @@
             class="btn btn-primary btn-filter"
             (click)="filtrarPorFecha(desde.value, hasta.value)"
           >
-            🔍 Filtrar por fecha
+            <span class="material-symbols-outlined icon-inline">filter_alt</span> Filtrar por fecha
           </button>
           @if (desdeFiltro() || hastaFiltro() || estadoFiltro()) {
             <button
@@ -87,7 +87,7 @@
               (click)="desde.value = ''; hasta.value = ''; limpiarFiltros()"
               title="Restablecer todos los filtros"
             >
-              🔄 Limpiar
+              <span class="material-symbols-outlined icon-inline">restart_alt</span> Limpiar
             </button>
           }
         </div>
@@ -100,7 +100,7 @@
     <div class="metricas-grid">
       <div class="card metrica-card">
         <div class="metrica-header">
-          <span class="metrica-icono">📦</span>
+          <span class="material-symbols-outlined metrica-icono">receipt_long</span>
           <span class="metrica-titulo">Total de Ventas</span>
         </div>
         <div class="metrica-valor">{{ totalVentas() }}</div>
@@ -109,7 +109,7 @@
 
       <div class="card metrica-card highlight">
         <div class="metrica-header">
-          <span class="metrica-icono">💰</span>
+          <span class="material-symbols-outlined metrica-icono">payments</span>
           <span class="metrica-titulo">Monto Total Facturado</span>
         </div>
         <div class="metrica-valor text-success">
@@ -120,7 +120,7 @@
 
       <div class="card metrica-card">
         <div class="metrica-header">
-          <span class="metrica-icono">📈</span>
+          <span class="material-symbols-outlined metrica-icono">trending_up</span>
           <span class="metrica-titulo">Ticket Promedio</span>
         </div>
         <div class="metrica-valor">
@@ -177,7 +177,7 @@
                         (click)="anular(venta.id)"
                         title="Anular venta y restaurar stock en catálogo"
                       >
-                        🚫 Anular
+                        <span class="material-symbols-outlined icon-inline">block</span> Anular
                       </button>
                     } @else if (venta.estado === 'ANULADA') {
                       <span class="badge-anulado-label">Anulada</span>
@@ -192,7 +192,7 @@
                         (click)="eliminar(venta.id)"
                         title="Eliminar esta venta del reporte permanentemente"
                       >
-                        🗑️
+                        <span class="material-symbols-outlined" style="font-size: 1rem; vertical-align: middle;">delete</span>
                       </button>
                     }
                   </div>
@@ -236,7 +236,7 @@
               <tr>
                 <td colspan="5" class="empty-state">
                   <div class="empty-content">
-                    <span class="empty-icon">📭</span>
+                    <span class="material-symbols-outlined empty-icon">inbox</span>
                     <p>No hay ventas registradas para este filtro o rango de fechas.</p>
                   </div>
                 </td>

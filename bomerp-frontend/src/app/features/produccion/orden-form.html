@@ -11,8 +11,9 @@
   </div>
 
   @if (error()) {
-    <div class="alert alert-danger">
-      <span>⚠️ {{ error() }}</span>
+    <div class="alert alert-danger" style="display: flex; align-items: center; gap: 0.5rem;">
+      <span class="material-symbols-outlined">warning</span>
+      <span>{{ error() }}</span>
     </div>
   }
 
@@ -37,13 +38,15 @@
         <textarea formControlName="observaciones" rows="3" class="form-control"></textarea>
       </div>
 
-      <div class="alert alert-info">
-        <span>💡 El sistema vinculará la receta estándar BOM deduciendo del almacén de insumos las bolsas bilaminadas y cajas de exportación correspondientes.</span>
+      <div class="alert alert-info" style="display: flex; align-items: flex-start; gap: 0.5rem;">
+        <span class="material-symbols-outlined" style="color: #0284c7; font-size: 1.25rem;">info</span>
+        <span>El sistema vinculará la receta estándar BOM deduciendo del almacén de insumos las bolsas bilaminadas y cajas de exportación correspondientes.</span>
       </div>
 
       <div class="form-actions mt-4">
         <button type="submit" class="btn btn-primary" [disabled]="loading()">
-          {{ loading() ? 'Planificando...' : '📋 Crear Orden de Trabajo' }}
+          <span class="material-symbols-outlined icon-inline">precision_manufacturing</span>
+          {{ loading() ? 'Planificando...' : 'Crear Orden de Trabajo' }}
         </button>
         <a routerLink="/produccion" class="btn btn-secondary">Cancelar</a>
       </div>

@@ -7,7 +7,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import pe.edu.upeu.bomerp.catalogo.producto.repository.ProductoRepository;
 import pe.edu.upeu.bomerp.ventas.repository.VentaRepository;
-import pe.edu.upeu.bomerp.caja.repository.SesionCajaRepository;
+import pe.edu.upeu.bomerp.finanzas.repository.SesionCajaRepository;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 

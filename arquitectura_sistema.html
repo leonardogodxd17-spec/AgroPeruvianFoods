@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arquitectura de Integración - ERP Agro Peruvian Foods</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 30px;
+            background-color: #0f172a;
+            color: #f8fafc;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 25px;
+            max-width: 900px;
+        }
+        .header h1 {
+            color: #38bdf8;
+            margin: 0 0 10px 0;
+            font-size: 26px;
+            letter-spacing: -0.5px;
+        }
+        .header p {
+            color: #94a3b8;
+            margin: 0;
+            font-size: 15px;
+            line-height: 1.5;
+        }
+        .diagram-card {
+            background-color: #1e293b;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+            padding: 25px;
+            width: 95%;
+            max-width: 1100px;
+            border: 1px solid #334155;
+            display: flex;
+            justify-content: center;
+        }
+        .badge-bar {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+        .badge {
+            background-color: #334155;
+            color: #38bdf8;
+            padding: 4px 12px;
+            border-radius: 9999px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Arquitectura Integral del Sistema (Unidad II)</h1>
+        <p>ERP Agro Peruvian Foods S.A.C. · Integración en 4 Capas Desacopladas</p>
+        <div class="badge-bar">
+            <span class="badge">Angular 19 (SPA)</span>
+            <span class="badge">Keycloak v26 (PKCE S256)</span>
+            <span class="badge">Spring Boot 4 / Java 21</span>
+            <span class="badge">Oracle 23c / H2</span>
+            <span class="badge">APIsPERU (RENIEC)</span>
+        </div>
+    </div>
+
+    <div class="diagram-card">
+        <pre class="mermaid">
+graph TD
+    classDef cliente fill:#e0f2fe,stroke:#0284c7,stroke-width:2px,color:#0369a1;
+    classDef idp fill:#fef3c7,stroke:#d97706,stroke-width:2px,color:#b45309;
+    classDef backend fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#15803d;
+    classDef persistencia fill:#f3e8ff,stroke:#9333ea,stroke-width:2px,color:#7e22ce;
+    classDef externo fill:#fee2e2,stroke:#dc2626,stroke-width:2px,color:#b91c1c;
+
+    subgraph C1 ["1. CAPA CLIENTE: SPA Angular 19 (Puerto 4200)"]
+        SPA["SPA Standalone Components<br/>(core · shared · features)"]:::cliente
+        CORE["Core: authService, authGuard, rolGuard, authInterceptor"]:::cliente
+        MEM["Tokens en Memoria (Signals)<br/>Respaldo en sessionStorage (Anti-F5)"]:::cliente
+        SPA --> CORE
+        CORE --> MEM
+    end
+
+    subgraph C2 ["2. CAPA IDENTIDAD: Keycloak v26 (Puerto 38080)"]
+        KC["Keycloak IdP (Realm: 'bomerp')"]:::idp
+        KCDB[("PostgreSQL 17<br/>(bomerp_keycloak)")]:::idp
+        KC --- KCDB
+    end
+
+    subgraph C3 ["3. CAPA NEGOCIO: Monolito Modular Spring Boot 4 / Java 21 (Puerto 8080)"]
+        SEC["OAuth2 Resource Server<br/>(Filtro JWT & Mapeo RBAC)"]:::backend
+        
+        subgraph MODS ["Módulos de Dominio"]
+            VENTAS["Módulo Ventas POS<br/>(Ventas, Detalle, Tickets 80mm)"]:::backend
+            FINANZAS["Módulo Finanzas<br/>(Sesiones Caja, Rendiciones, Créditos)"]:::backend
+            INV["Módulo Inventario<br/>(Lotes FEFO, Kardex)"]:::backend
+            CAT["Módulos Auxiliares<br/>(Catálogo, Compras, Producción)"]:::backend
+        end
+        SEC --> MODS
+    end
+
+    subgraph C4 ["4. CAPA PERSISTENCIA Y SERVICIOS EXTERNOS"]
+        DB[("Oracle Database 23c / H2<br/>Esquemas: BOM_VENTAS, BOM_CATALOGO, etc.")]:::persistencia
+        RENIEC["APIsPERU REST API<br/>(Padrón Nacional RENIEC)"]:::externo
+    end
+
+    SPA -->|"1. Redirección OAuth2 + PKCE (S256)"| KC
+    KC -->|"2. Token JWT Firmado (RS256)"| MEM
+    CORE -->|"3. Peticiones HTTP con Bearer Token"| SEC
+    SEC -.->|"4. Valida firma JWKS (/certs)"| KC
+    MODS -->|"5. Transacciones ACID (@Transactional)"| DB
+    VENTAS -->|"6. Consulta DNI en tiempo real"| RENIEC
+        </pre>
+    </div>
+
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'dark',
+            securityLevel: 'loose',
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true,
+                curve: 'basis'
+            }
+        });
+    </script>
+</body>
+</html>

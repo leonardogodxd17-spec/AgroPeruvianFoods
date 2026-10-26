@@ -9,14 +9,14 @@
     <div class="header-actions">
       @if (sesionActiva()) {
         <button class="btn btn-primary" (click)="modalMovimiento.set(true)">
-          ➕ Registrar Movimiento
+          <span class="material-symbols-outlined icon-inline">add_circle</span> Registrar Movimiento
         </button>
         <button class="btn btn-danger" (click)="modalCierre.set(true)">
-          🔒 Cerrar Turno / Arqueo
+          <span class="material-symbols-outlined icon-inline">lock</span> Cerrar Turno / Arqueo
         </button>
       } @else {
         <button class="btn btn-primary" (click)="modalApertura.set(true)">
-          🔓 Aperturar Turno de Caja
+          <span class="material-symbols-outlined icon-inline">lock_open</span> Aperturar Turno de Caja
         </button>
       }
     </div>
@@ -24,13 +24,15 @@
 
   <!-- Messages -->
   @if (error()) {
-    <div class="alert alert-danger">
-      <span>⚠️ {{ error() }}</span>
+    <div class="alert alert-danger" style="display: flex; align-items: center; gap: 0.5rem;">
+      <span class="material-symbols-outlined">warning</span>
+      <span>{{ error() }}</span>
     </div>
   }
   @if (successMsg()) {
-    <div class="alert alert-success">
-      <span>✅ {{ successMsg() }}</span>
+    <div class="alert alert-success" style="display: flex; align-items: center; gap: 0.5rem;">
+      <span class="material-symbols-outlined">check_circle</span>
+      <span>{{ successMsg() }}</span>
     </div>
   }
 
@@ -40,7 +42,7 @@
       <div class="session-active-grid">
         <div class="session-status-badge">
           <span class="badge badge-success">CAJA ABIERTA #{{ sesion.id }}</span>
-          <span class="cajero-name">👤 Cajero: {{ sesion.cajeroNombre }}</span>
+          <span class="cajero-name"><span class="material-symbols-outlined icon-inline" style="font-size: 1.1rem;">person</span> Cajero: {{ sesion.cajeroNombre }}</span>
         </div>
         <div class="kpi-group">
           <div class="kpi-item">
@@ -59,7 +61,7 @@
       </div>
     } @else {
       <div class="no-session-box">
-        <span class="lock-icon">🔒</span>
+        <span class="material-symbols-outlined lock-icon" style="font-size: 2.5rem; display: block; margin-bottom: 0.5rem;">lock</span>
         <h3>No hay sesión de caja activa</h3>
         <p>Aperture un nuevo turno para poder asentar movimientos de ingresos o egresos.</p>
         <button class="btn btn-primary mt-2" (click)="modalApertura.set(true)">Aperturar Turno Ahora</button>
@@ -71,28 +73,28 @@
   @if (resumen(); as r) {
     <div class="metrics-grid">
       <div class="metric-card">
-        <span class="metric-icon">📑</span>
+        <span class="material-symbols-outlined metric-icon">receipt_long</span>
         <div>
           <span class="metric-label">Total Sesiones</span>
           <h3 class="metric-value">{{ r.totalSesiones }}</h3>
         </div>
       </div>
       <div class="metric-card">
-        <span class="metric-icon text-success">📈</span>
+        <span class="material-symbols-outlined metric-icon text-success">trending_up</span>
         <div>
           <span class="metric-label">Ingresos Registrados</span>
           <h3 class="metric-value text-success">{{ r.totalIngresos | currency:'PEN':'S/ ' }}</h3>
         </div>
       </div>
       <div class="metric-card">
-        <span class="metric-icon text-danger">📉</span>
+        <span class="material-symbols-outlined metric-icon text-danger">trending_down</span>
         <div>
           <span class="metric-label">Egresos Registrados</span>
           <h3 class="metric-value text-danger">{{ r.totalEgresos | currency:'PEN':'S/ ' }}</h3>
         </div>
       </div>
       <div class="metric-card">
-        <span class="metric-icon">💰</span>
+        <span class="material-symbols-outlined metric-icon">account_balance_wallet</span>
         <div>
           <span class="metric-label">Saldo Neto Consolidado</span>
           <h3 class="metric-value">{{ r.saldoNeto | currency:'PEN':'S/ ' }}</h3>
@@ -105,7 +107,9 @@
   <div class="card mt-4">
     <div class="card-header">
       <h2>Historial de Sesiones de Caja</h2>
-      <button class="btn btn-secondary btn-sm" (click)="cargarDatos()">🔄 Actualizar</button>
+      <button class="btn btn-secondary btn-sm" (click)="cargarDatos()">
+        <span class="material-symbols-outlined icon-inline" style="font-size: 1rem;">refresh</span> Actualizar
+      </button>
     </div>
 
     <div class="table-container mt-2">

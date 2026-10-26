@@ -51,7 +51,7 @@ services:
       - "38080:8080"
     environment:
       KC_BOOTSTRAP_ADMIN_USERNAME: admin
-      KC_BOOTSTRAP_ADMIN_PASSWORD: admin123
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
       KC_DB: postgres
       KC_DB_URL: jdbc:postgresql://keycloak-db:5432/bomerp_keycloak
       KC_DB_USERNAME: bomerp_keycloak
@@ -59,7 +59,44 @@ services:
     volumes:
       - keycloak-data:/opt/keycloak/data
 
+  loki:
+    image: grafana/loki:3.0.0
+    container_name: bomerp-loki
+    restart: unless-stopped
+    ports:
+      - "33100:3100"
+      - "3100:3100"
+    volumes:
+      - loki-data:/loki
+    command: -config.file=/etc/loki/local-config.yaml
+
+  promtail:
+    image: grafana/promtail:3.0.0
+    container_name: bomerp-promtail
+    restart: unless-stopped
+    volumes:
+      - ./promtail/promtail-config-dev.yml:/etc/promtail/config.yml:ro
+      - ./logs:/var/log/bomerp-backend:ro
+    command: -config.file=/etc/promtail/config.yml
+    depends_on:
+      - loki
+
+  grafana:
+    image: grafana/grafana:11.4.0
+    container_name: bomerp-grafana
+    restart: unless-stopped
+    ports:
+      - "33000:3000"
+      - "3300:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+    depends_on:
+      - loki
+
 volumes:
   oracle-data:
   keycloak-data:
   keycloak-db-data:
+  loki-data:

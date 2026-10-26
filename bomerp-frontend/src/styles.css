@@ -333,3 +333,29 @@ tr:hover td {
 .tabla-detalle tr:last-child td {
   border-bottom: none;
 }
+
+/* Material Symbols Vector Icons */
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 1.15rem;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-flex;
+  vertical-align: middle;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+}
+
+.icon-inline {
+  font-size: 1.1em;
+  margin-right: 0.35rem;
+  vertical-align: -2px;
+}

@@ -9,14 +9,15 @@
     </div>
     <div class="header-actions">
       <a routerLink="/ventas/reporte" class="btn btn-secondary">
-        📊 Ir a Reporte de Ventas
+        <span class="material-symbols-outlined icon-inline">bar_chart</span>
+        Ir a Reporte de Ventas
       </a>
     </div>
   </div>
 
   @if (error()) {
     <div class="alert alert-danger">
-      <span class="alert-icon">⚠️</span>
+      <span class="material-symbols-outlined icon-inline" style="color: #dc2626;">warning</span>
       <div>
         <strong>Error de Transacción:</strong> {{ error() }}
       </div>
@@ -40,11 +41,16 @@
           <button
             type="button"
             class="btn btn-secondary"
-            style="white-space: nowrap; padding: 0.5rem 1rem;"
+            style="white-space: nowrap; padding: 0.5rem 1rem; display: inline-flex; align-items: center; gap: 0.35rem;"
             [disabled]="buscandoDni()"
             (click)="buscarPorDni(dniInput.value)"
           >
-            {{ buscandoDni() ? '⏳ Buscando...' : '🔍 Buscar' }}
+            @if (buscandoDni()) {
+              <span class="spinner-small"></span> Buscando...
+            } @else {
+              <span class="material-symbols-outlined" style="font-size: 1.15rem;">search</span>
+              Buscar
+            }
           </button>
         </div>
       </div>
@@ -63,10 +69,10 @@
       <div class="form-group">
         <label for="metodoPago" class="form-label">Método de Pago</label>
         <select id="metodoPago" formControlName="metodoPago" class="form-control">
-          <option value="EFECTIVO">💵 Efectivo al Contado</option>
-          <option value="YAPE">📱 Yape (Billetera Digital)</option>
-          <option value="PLIN">📱 Plin (Billetera Digital)</option>
-          <option value="TRANSFERENCIA">🏦 Transferencia Bancaria (BCP / BBVA)</option>
+          <option value="EFECTIVO">Efectivo al Contado</option>
+          <option value="YAPE">Yape (Billetera Digital)</option>
+          <option value="PLIN">Plin (Billetera Digital)</option>
+          <option value="TRANSFERENCIA">Transferencia Bancaria (BCP / BBVA)</option>
         </select>
       </div>
     </div>
@@ -146,7 +152,8 @@
                     [disabled]="lineasForm.length <= 1"
                     title="Quitar esta línea de la venta"
                   >
-                    🗑️ Quitar
+                    <span class="material-symbols-outlined icon-inline" style="font-size: 1rem;">delete</span>
+                    Quitar
                   </button>
                 </td>
               </tr>
@@ -167,14 +174,16 @@
 
       <div class="acciones-lineas">
         <button type="button" class="btn btn-secondary" (click)="agregarLinea()">
-          ➕ Agregar otra línea
+          <span class="material-symbols-outlined icon-inline" style="font-size: 1.1rem;">add</span>
+          Agregar otra línea
         </button>
       </div>
     </div>
 
     <div class="form-footer">
       <div class="info-aviso">
-        💡 <em>El subtotal y total calculados en pantalla son una vista anticipada informativa. El backend calculará y certificará los valores autoritativos al registrar la transacción.</em>
+        <span class="material-symbols-outlined icon-inline" style="color: #0284c7;">info</span>
+        <em>El subtotal y total calculados en pantalla son una vista anticipada informativa. El backend calculará y certificará los valores autoritativos al registrar la transacción.</em>
       </div>
 
       <div class="botones-confirmacion">
@@ -186,7 +195,8 @@
           [disabled]="loading() || lineasForm.length === 0"
           title="Ver cómo quedará el comprobante impreso antes de emitir"
         >
-          👁️ Previsualizar Ticket
+          <span class="material-symbols-outlined icon-inline" style="font-size: 1.1rem;">visibility</span>
+          Previsualizar Ticket
         </button>
         <button
           type="button"
@@ -197,7 +207,8 @@
           @if (loading()) {
             <span class="spinner-small"></span> Registrando venta...
           } @else {
-            ✅ Registrar Venta (S/ {{ total().toFixed(2) }})
+            <span class="material-symbols-outlined icon-inline" style="font-size: 1.1rem;">check_circle</span>
+            Registrar Venta (S/ {{ total().toFixed(2) }})
           }
         </button>
       </div>
@@ -224,7 +235,7 @@
         <!-- Papel Térmico ESC/POS 80mm -->
         <div class="ticket-paper printable-ticket">
           <div class="ticket-header">
-            <div class="ticket-logo-brand">🌿 AGRO PERUVIAN FOODS S.A.C.</div>
+            <div class="ticket-logo-brand">AGRO PERUVIAN FOODS S.A.C.</div>
             <p class="ticket-sub">RUC: 20608974512</p>
             <p class="ticket-sub">Derivados de Cacao y Aceite de Coco Prensado en Frío</p>
             <p class="ticket-sub">Av. Manuel Prado 1050, Lurigancho - Lima</p>
@@ -299,19 +310,23 @@
           </button>
 
           <button type="button" class="btn btn-info btn-print" (click)="imprimirTicket()">
-            🖨️ Imprimir Ticket (ESC/POS)
+            <span class="material-symbols-outlined icon-inline" style="font-size: 1rem;">print</span>
+            Imprimir Ticket (ESC/POS)
           </button>
 
           @if (esBorrador()) {
             <button type="button" class="btn btn-primary" (click)="mostrarModalTicket.set(false); confirmarYGuardar()">
-              ✅ Confirmar y Emitir
+              <span class="material-symbols-outlined icon-inline" style="font-size: 1rem;">check_circle</span>
+              Confirmar y Emitir
             </button>
           } @else {
             <button type="button" class="btn btn-success" (click)="nuevaVenta()">
-              ➕ Nueva Venta
+              <span class="material-symbols-outlined icon-inline" style="font-size: 1rem;">add_shopping_cart</span>
+              Nueva Venta
             </button>
             <button type="button" class="btn btn-secondary" (click)="irAReporte()">
-              📊 Ver en Reporte
+              <span class="material-symbols-outlined icon-inline" style="font-size: 1rem;">bar_chart</span>
+              Ver en Reporte
             </button>
           }
         </div>

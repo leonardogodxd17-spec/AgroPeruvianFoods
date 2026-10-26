@@ -7,20 +7,24 @@
     </div>
     <div class="header-actions">
       <a routerLink="/compras/proveedores" class="btn btn-secondary">
-        🏭 Directorio de Proveedores
+        <span class="material-symbols-outlined icon-inline">store</span> Directorio de Proveedores
       </a>
-      <button class="btn btn-secondary" (click)="cargarDatos()">🔄</button>
+      <button class="btn btn-secondary" (click)="cargarDatos()" title="Actualizar">
+        <span class="material-symbols-outlined" style="vertical-align: middle;">refresh</span>
+      </button>
     </div>
   </div>
 
   @if (error()) {
-    <div class="alert alert-danger">
-      <span>⚠️ {{ error() }}</span>
+    <div class="alert alert-danger" style="display: flex; align-items: center; gap: 0.5rem;">
+      <span class="material-symbols-outlined">warning</span>
+      <span>{{ error() }}</span>
     </div>
   }
   @if (successMsg()) {
-    <div class="alert alert-success">
-      <span>✅ {{ successMsg() }}</span>
+    <div class="alert alert-success" style="display: flex; align-items: center; gap: 0.5rem;">
+      <span class="material-symbols-outlined">check_circle</span>
+      <span>{{ successMsg() }}</span>
     </div>
   }
 
@@ -28,21 +32,21 @@
   @if (resumen(); as r) {
     <div class="metrics-grid">
       <div class="metric-card">
-        <span class="metric-icon">📦</span>
+        <span class="material-symbols-outlined metric-icon">inventory_2</span>
         <div>
           <span class="metric-label">Facturas de Compra</span>
           <h3 class="metric-value">{{ r.totalCompras }}</h3>
         </div>
       </div>
       <div class="metric-card">
-        <span class="metric-icon">💰</span>
+        <span class="material-symbols-outlined metric-icon">payments</span>
         <div>
           <span class="metric-label">Total Facturado</span>
           <h3 class="metric-value">{{ r.totalFacturado | currency:'PEN':'S/ ' }}</h3>
         </div>
       </div>
       <div class="metric-card">
-        <span class="metric-icon text-danger">⏳</span>
+        <span class="material-symbols-outlined metric-icon text-danger">pending_actions</span>
         <div>
           <span class="metric-label">Saldo Pendiente de Pago</span>
           <h3 class="metric-value text-danger">{{ r.totalPendientePago | currency:'PEN':'S/ ' }}</h3>
@@ -92,9 +96,13 @@
               </td>
               <td class="text-center">
                 <div class="btn-group">
-                  <button class="btn btn-secondary btn-sm" (click)="verDetalle(c)">👁️ Detalle</button>
+                  <button class="btn btn-secondary btn-sm" (click)="verDetalle(c)">
+                    <span class="material-symbols-outlined icon-inline" style="font-size: 1rem;">visibility</span> Detalle
+                  </button>
                   @if (c.saldoPendiente > 0 && c.estado !== 'ANULADA') {
-                    <button class="btn btn-primary btn-sm" (click)="abrirAmortizar(c)">💳 Amortizar</button>
+                    <button class="btn btn-primary btn-sm" (click)="abrirAmortizar(c)">
+                      <span class="material-symbols-outlined icon-inline" style="font-size: 1rem;">payments</span> Amortizar
+                    </button>
                   }
                 </div>
               </td>

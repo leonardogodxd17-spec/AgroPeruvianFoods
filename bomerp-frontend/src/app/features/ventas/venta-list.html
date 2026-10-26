@@ -8,23 +8,25 @@
     </div>
     <div class="header-actions">
       <a routerLink="/ventas/nueva" class="btn btn-primary">
-        🧾 Emitir Nueva Venta POS
+        <span class="material-symbols-outlined icon-inline">point_of_sale</span> Emitir Nueva Venta POS
       </a>
       <button class="btn btn-secondary" (click)="cargarDatos()">
-        🔄 Actualizar
+        <span class="material-symbols-outlined icon-inline">refresh</span> Actualizar
       </button>
     </div>
   </div>
 
   <!-- Messages -->
   @if (error()) {
-    <div class="alert alert-danger">
-      <span>⚠️ {{ error() }}</span>
+    <div class="alert alert-danger" style="display: flex; align-items: center; gap: 0.5rem;">
+      <span class="material-symbols-outlined">warning</span>
+      <span>{{ error() }}</span>
     </div>
   }
   @if (successMsg()) {
-    <div class="alert alert-success">
-      <span>✅ {{ successMsg() }}</span>
+    <div class="alert alert-success" style="display: flex; align-items: center; gap: 0.5rem;">
+      <span class="material-symbols-outlined">check_circle</span>
+      <span>{{ successMsg() }}</span>
     </div>
   }
 
@@ -32,21 +34,21 @@
   @if (resumen(); as r) {
     <div class="metrics-grid">
       <div class="metric-card">
-        <span class="metric-icon">🛍️</span>
+        <span class="material-symbols-outlined metric-icon">receipt_long</span>
         <div>
           <span class="metric-label">Comprobantes Emitidos</span>
           <h3 class="metric-value">{{ r.totalVentas }}</h3>
         </div>
       </div>
       <div class="metric-card">
-        <span class="metric-icon text-success">💵</span>
+        <span class="material-symbols-outlined metric-icon text-success">payments</span>
         <div>
           <span class="metric-label">Total Recaudado</span>
           <h3 class="metric-value text-success">{{ r.totalRecaudado | currency:'PEN':'S/ ' }}</h3>
         </div>
       </div>
       <div class="metric-card">
-        <span class="metric-icon text-info">📊</span>
+        <span class="material-symbols-outlined metric-icon text-info">trending_up</span>
         <div>
           <span class="metric-label">Ticket Promedio</span>
           <h3 class="metric-value text-info">{{ r.ticketPromedio | currency:'PEN':'S/ ' }}</h3>
@@ -93,9 +95,13 @@
               </td>
               <td class="text-center">
                 <div class="btn-group">
-                  <button class="btn btn-secondary btn-sm" (click)="verTicket(v)">👁️ Ver Ticket</button>
+                  <button class="btn btn-secondary btn-sm" (click)="verTicket(v)">
+                    <span class="material-symbols-outlined icon-inline" style="font-size: 1rem;">visibility</span> Ver Ticket
+                  </button>
                   @if (v.estado === 'REGISTRADA') {
-                    <button class="btn btn-danger btn-sm" (click)="anularVenta(v.id)">🚫 Anular</button>
+                    <button class="btn btn-danger btn-sm" (click)="anularVenta(v.id)">
+                      <span class="material-symbols-outlined icon-inline" style="font-size: 1rem;">block</span> Anular
+                    </button>
                   }
                 </div>
               </td>

@@ -1,0 +1,47 @@
+<h2>{{ id() ? 'Editar Categoría Financiera' : 'Nueva Categoría Financiera' }}</h2>
+
+<form [formGroup]="form" (ngSubmit)="guardar()" style="max-width: 450px; display: flex; flex-direction: column; gap: 1rem;">
+  @if (loading()) {
+    <p>Cargando...</p>
+  }
+
+  <div>
+    <label style="display: block; font-weight: bold; margin-bottom: 0.25rem;">
+      Nombre
+    </label>
+    <input type="text" formControlName="nombre" style="width: 100%; padding: 0.5rem;" />
+    @if (form.controls.nombre.touched && form.controls.nombre.hasError('required')) {
+      <p style="color: red; margin: 0.25rem 0;">Este campo es obligatorio.</p>
+    }
+  </div>
+
+  <div>
+    <label style="display: block; font-weight: bold; margin-bottom: 0.25rem;">
+      Tipo Financiero Predeterminado
+    </label>
+    <select formControlName="tipoDefault" style="width: 100%; padding: 0.5rem;">
+      <option value="INGRESO">INGRESO</option>
+      <option value="EGRESO">EGRESO</option>
+    </select>
+  </div>
+
+  <div>
+    <label style="display: block; font-weight: bold; margin-bottom: 0.25rem;">
+      Descripción
+    </label>
+    <textarea formControlName="descripcion" rows="3" style="width: 100%; padding: 0.5rem;"></textarea>
+  </div>
+
+  @if (error()) {
+    <p style="color: red; margin: 0;">{{ error() }}</p>
+  }
+
+  <div style="display: flex; gap: 0.5rem;">
+    <button type="submit" [disabled]="loading() || errorCarga()" style="padding: 0.5rem 1rem;">
+      Guardar
+    </button>
+    <button type="button" (click)="cancelar()" style="padding: 0.5rem 1rem;">
+      Cancelar
+    </button>
+  </div>
+</form>

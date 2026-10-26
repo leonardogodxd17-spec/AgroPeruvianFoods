@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arquitectura de la Aplicación - C4 Model Nivel C2</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 30px;
+            background-color: #f1f5f9;
+            color: #0f172a;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 25px;
+            max-width: 950px;
+        }
+        .pill-badge {
+            background-color: #dbeafe;
+            color: #1d4ed8;
+            font-size: 13px;
+            font-weight: 700;
+            padding: 5px 16px;
+            border-radius: 9999px;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+        .header h1 {
+            color: #0f172a;
+            margin: 0 0 8px 0;
+            font-size: 30px;
+            letter-spacing: -0.5px;
+        }
+        .header p {
+            color: #475569;
+            margin: 0;
+            font-size: 16px;
+            line-height: 1.5;
+        }
+        .diagram-container {
+            background-color: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08);
+            padding: 30px;
+            width: 95%;
+            max-width: 1200px;
+            border: 1px solid #cbd5e1;
+            display: flex;
+            justify-content: center;
+        }
+        .footer-pills {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-top: 25px;
+        }
+        .footer-pill {
+            background-color: #e2e8f0;
+            color: #1e293b;
+            padding: 7px 18px;
+            border-radius: 9999px;
+            font-size: 13px;
+            font-weight: 700;
+            border: 1px solid #cbd5e1;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="pill-badge">Aplicación LP2</div>
+        <h1>Arquitectura de la aplicación</h1>
+        <p>El backend modular expone los módulos propios del equipo a la SPA mediante peticiones autenticadas con JWT emitido por Keycloak.<br/>
+        <strong>Diagrama de contenedores · C4 Model — Nivel C2</strong></p>
+    </div>
+
+    <div class="diagram-container">
+        <pre class="mermaid">
+graph TD
+    classDef frontend fill:#eff6ff,stroke:#2563eb,stroke-width:2px,color:#1e40af;
+    classDef backend fill:#f5f3ff,stroke:#7c3aed,stroke-width:2px,color:#5b21b6;
+    classDef oracle fill:#ecfdf5,stroke:#059669,stroke-width:2px,color:#065f46;
+    classDef idp fill:#fffbeb,stroke:#d97706,stroke-width:2px,stroke-dasharray: 4 4,color:#92400e;
+    classDef idpdb fill:#fffbeb,stroke:#d97706,stroke-width:2px,color:#92400e;
+    classDef metrics fill:#f8fafc,stroke:#64748b,stroke-width:2px,stroke-dasharray: 4 4,color:#334155;
+
+    subgraph FILA_SUPERIOR [" "]
+        direction LR
+        ANGULAR["<b>[Contenedor: Angular 19]</b><br/><br/>SPA Agro Peruvian Foods<br/><i>Interfaz de Vendedores, Cajeros y Clientes POS</i>"]:::frontend
+        SPRING["<b>[Contenedor: Spring Boot / Spring Modulith]</b><br/><br/>bomerp-backend<br/><i>Expone Ventas POS, Finanzas y Catálogo vía REST</i>"]:::backend
+        ORACLE["<b>[Contenedor: Oracle Database 23c]</b><br/><br/>BOM_VENTAS / BOM_CATALOGO<br/><i>Productos, Ventas, Lotes FEFO, Auditoría</i>"]:::oracle
+    end
+
+    subgraph FILA_INFERIOR [" "]
+        direction LR
+        KEYCLOAK["<b>[Sistema externo: Identity Provider]</b><br/><br/>Keycloak v26<br/><i>Realm 'bomerp' — Valida login y emite JWT</i>"]:::idp
+        KEYCLOAK_DB["<b>[Contenedor: bomerp-keycloak-db]</b><br/><br/>PostgreSQL 17<br/><i>Usuarios, contraseñas y roles</i>"]:::idpdb
+        METRICAS["<b>[S4-S5: Métricas y logs]</b><br/><br/>Actuator · Prometheus · Loki · Grafana<br/><i>Monitoreo de latencia y errores</i>"]:::metrics
+    end
+
+    ANGULAR -->|"<b>HTTPS + JWT</b><br/>(Bearer Token)"| SPRING
+    SPRING -->|"<b>JDBC</b><br/>(HikariCP)"| ORACLE
+
+    ANGULAR -->|"<b>Login OIDC</b><br/>(Auth Code + PKCE)"| KEYCLOAK
+    KEYCLOAK -->|"<b>JDBC</b>"| KEYCLOAK_DB
+
+    SPRING -->|"<b>métricas + logs</b><br/>(/actuator/prometheus)"| METRICAS
+        </pre>
+    </div>
+
+    <div class="footer-pills">
+        <span class="footer-pill">JWT</span>
+        <span class="footer-pill">Paginación</span>
+        <span class="footer-pill">Auditoría</span>
+    </div>
+
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'default',
+            securityLevel: 'loose',
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true,
+                curve: 'basis'
+            }
+        });
+    </script>
+</body>
+</html>

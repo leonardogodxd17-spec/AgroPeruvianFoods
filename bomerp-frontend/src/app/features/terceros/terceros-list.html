@@ -1,0 +1,101 @@
+<div class="terceros-container">
+  <div class="header-action">
+    <div>
+      <h2><span class="material-symbols-outlined icon-inline">group</span> Directorio de Clientes y Proveedores</h2>
+      <p class="subtitle">Gestión centralizada de terceros comerciales, RUC/DNI y contactos</p>
+    </div>
+    <a routerLink="/terceros/nuevo" class="btn btn-primary">
+      + Registrar Tercero
+    </a>
+  </div>
+
+  <div class="filters-bar">
+    <div class="tabs">
+      <button
+        type="button"
+        class="tab-btn"
+        [class.active]="filtroTipo() === 'TODOS'"
+        (click)="cambiarFiltro('TODOS')"
+      >
+        Todos
+      </button>
+      <button
+        type="button"
+        class="tab-btn"
+        [class.active]="filtroTipo() === 'PROVEEDOR'"
+        (click)="cambiarFiltro('PROVEEDOR')"
+      >
+        <span class="material-symbols-outlined icon-inline">business</span> Proveedores
+      </button>
+      <button
+        type="button"
+        class="tab-btn"
+        [class.active]="filtroTipo() === 'CLIENTE'"
+        (click)="cambiarFiltro('CLIENTE')"
+      >
+        <span class="material-symbols-outlined icon-inline">person</span> Clientes
+      </button>
+    </div>
+
+    <div class="search-box">
+      <input
+        type="text"
+        [ngModel]="terminoBusqueda()"
+        (ngModelChange)="terminoBusqueda.set($event)"
+        placeholder="Buscar por Razón Social, RUC o dirección..."
+        class="search-input"
+      />
+    </div>
+  </div>
+
+  @if (error()) {
+    <div class="alert alert-danger">{{ error() }}</div>
+  }
+
+  @if (cargando()) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p>Cargando directorio de terceros...</p>
+    </div>
+  } @else {
+    <div class="card table-card">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Documento</th>
+            <th>Razón Social / Nombre</th>
+            <th>Tipo</th>
+            <th>Teléfono</th>
+            <th>Dirección</th>
+            <th>Correo</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (ter of tercerosFiltrados; track ter.id) {
+            <tr>
+              <td>
+                <span class="doc-badge">{{ ter.tipoDocumento }}: {{ ter.numeroDocumento }}</span>
+              </td>
+              <td><strong>{{ ter.razonSocial }}</strong></td>
+              <td>
+                <span
+                  class="type-badge"
+                  [ngClass]="'badge-' + ter.tipoTercero.toLowerCase()"
+                >
+                  {{ ter.tipoTercero }}
+                </span>
+              </td>
+              <td>{{ ter.telefono || '-' }}</td>
+              <td>{{ ter.direccion || '-' }}</td>
+              <td>{{ ter.correo || '-' }}</td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="6" class="empty-row">No se encontraron terceros registrados con ese criterio.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>

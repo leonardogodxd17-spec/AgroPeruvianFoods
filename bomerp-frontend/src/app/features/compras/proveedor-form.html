@@ -11,8 +11,9 @@
   </div>
 
   @if (error()) {
-    <div class="alert alert-danger">
-      <span>⚠️ {{ error() }}</span>
+    <div class="alert alert-danger" style="display: flex; align-items: center; gap: 0.5rem;">
+      <span class="material-symbols-outlined">warning</span>
+      <span>{{ error() }}</span>
     </div>
   }
 
@@ -85,7 +86,8 @@
 
       <div class="form-actions mt-4">
         <button type="submit" class="btn btn-primary" [disabled]="loading()">
-          {{ loading() ? 'Registrando...' : '➕ Guardar Proveedor' }}
+          <span class="material-symbols-outlined icon-inline">add_circle</span>
+          {{ loading() ? 'Registrando...' : 'Guardar Proveedor' }}
         </button>
         <a routerLink="/compras/proveedores" class="btn btn-secondary">Cancelar</a>
       </div>

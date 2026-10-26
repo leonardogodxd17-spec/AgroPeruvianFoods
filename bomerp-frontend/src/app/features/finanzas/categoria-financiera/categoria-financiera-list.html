@@ -1,0 +1,50 @@
+<h2>Categorías Financieras (Módulo Finanzas)</h2>
+
+@if (loading()) {
+  <p>Cargando categorías financieras...</p>
+}
+
+@if (error()) {
+  <p class="error" style="color: red;">{{ error() }}</p>
+}
+
+<p>
+  <a routerLink="/finanzas/categorias/nueva">+ Nueva categoría financiera</a>
+</p>
+
+<table border="1" cellpadding="8" cellspacing="0" style="width: 100%; border-collapse: collapse;">
+  <thead>
+    <tr style="background-color: #f2f2f2;">
+      <th>ID</th>
+      <th>Nombre</th>
+      <th>Tipo Default</th>
+      <th>Descripción</th>
+      <th>Acciones</th>
+    </tr>
+  </thead>
+  <tbody>
+    @for (cat of categorias(); track cat.id) {
+      <tr>
+        <td>{{ cat.id }}</td>
+        <td><strong>{{ cat.nombre }}</strong></td>
+        <td>
+          <span [style.color]="cat.tipoDefault === 'INGRESO' ? 'green' : 'crimson'" style="font-weight: bold;">
+            {{ cat.tipoDefault }}
+          </span>
+        </td>
+        <td>{{ cat.descripcion }}</td>
+        <td>
+          <a [routerLink]="['/finanzas/categorias', cat.id, 'editar']">Editar</a>
+          &nbsp;|&nbsp;
+          <button (click)="eliminar(cat.id!)">Eliminar</button>
+        </td>
+      </tr>
+    } @empty {
+      @if (!loading() && !error()) {
+        <tr>
+          <td colspan="5">No hay categorías financieras registradas.</td>
+        </tr>
+      }
+    }
+  </tbody>
+</table>
